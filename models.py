@@ -29,7 +29,7 @@ class User(Model):
         return f'@{self.username or " "} -Ім\'я:{self.first_name} {self.last_name or " "} Поверх:{self.floor or " "}'
         
     def house_view(self):
-        return f'@{self.username or " "} -Ім\'я:{self.first_name} {self.last_name or " "} Секція:{self.section or " "} Поверх:{self.floor or " "}'
+        return f'@{self.username or " "} -- Ім\'я: {self.first_name} {self.last_name or " "} -- Поверх: {self.floor}'
 
 
 class Show(Model):

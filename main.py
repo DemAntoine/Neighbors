@@ -167,7 +167,7 @@ def set_floor_kbd(bot, update):
     for row in range(0, 5):
         floors = []
         for i in range(1, 6):
-            floors.append(InlineKeyboardButton(str(floor), callback_data='_f'+str(floor)))
+            floors.append(InlineKeyboardButton(str(floor), callback_data='_f' + str(floor)))
             floor += 1
         keyboard.append(floors)
 
@@ -186,20 +186,23 @@ def save_user_data(bot, update):
     user.floor = floor
     user.save()
     update.callback_query.answer()
-    
+
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
-                disable_web_page_preview=True, text='Ваші дані збережені. Бажаєте подивитись сусідів?')
+                    disable_web_page_preview=True, text='Ваші дані збережені. Бажаєте подивитись сусідів?')
 
 
 def show_this_house(bot, update):
     user_query = Show.get(user_id=get_user_id(update))
+    neighbors = []
 
-    query = User.select().where(User.house == user_query.house)
-    neighbors = [str(user.house_view()) + '\n' for user in query]
+    for i in range(1, 7):
+        neighbors.append('<b>Секція ' + str(i) + '</b>\n')
+        for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
+            neighbors.append(str(user.house_view()) + '\n')
 
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
-                 
+
     update.callback_query.answer()
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True, text=show_list)
