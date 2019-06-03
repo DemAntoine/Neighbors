@@ -24,13 +24,12 @@ class User(Model):
 
     def __str__(self):
         return f'@{self.username} -Ім\'я:{self.first_name} {self.last_name}-Будинок:{self.house}'
-        # return f'Нік:{self.username}-Ім\'я:{self.first_name} {self.last_name}-Будинок:{self.house}' \
-        #     f'<a href="https://web.telegram.org/#/im?p=u848451586">name</a>'
-#     <a href="https://web.telegram.org/#/im?p=u848451586">name</a>
-# https://web.telegram.org/#/im?p=u848451586
 
     def section_view(self):
         return f'@{self.username or " "} -Ім\'я:{self.first_name} {self.last_name or " "} Поверх:{self.floor or " "}'
+        
+    def house_view(self):
+        return f'@{self.username or " "} -Ім\'я:{self.first_name} {self.last_name or " "} Секція:{self.section or " "} Поверх:{self.floor or " "}'
 
 
 class Show(Model):

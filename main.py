@@ -95,47 +95,22 @@ def section_kbd(bot, update):
                  InlineKeyboardButton('Секція 4', callback_data='s4')],
                 [InlineKeyboardButton('Секція 5', callback_data='s5'),
                  InlineKeyboardButton('Секція 6', callback_data='s6')],
-                [InlineKeyboardButton('Показати всіх в цьому будинку', callback_data='show_house')]]
+                [InlineKeyboardButton('Показати всіх в цьому будинку', callback_data='show_this_house')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Виберіть секцію 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd'))
 
 
-# def set_floor_kbd(bot, update):
-#     """func show keyboard to chose section to show"""
-#     # user_query = Show.get(user_id=get_user_id(update))
-#     # user_query.section = int(update.callback_query.data[1])
-#     # user_query.save()
-#
-#     keyboard = []
-#     floor = 1
-#     for row in range(0, 5):
-#         floors = []
-#         for i in range(1, 6):
-#             floors.append(InlineKeyboardButton(str(floor), callback_data='f'+str(floor)))
-#             floor += 1
-#         keyboard.append(floors)
-#
-#     keyboard.append([InlineKeyboardButton('Показати всіх в цій секції', callback_data='show_section')])
-#     reply_markup = InlineKeyboardMarkup(keyboard)
-#     update.callback_query.message.reply_text('Виберіть поверх 🧗 :', reply_markup=reply_markup)
-#     update.callback_query.answer()
-#     logging.info('user_id: %d command: %s' % (get_user_id(update), 'floor_kbd'))
-
-
 def save_params(bot, update):
-    # floor = [s for s in list(update.callback_query.data) if s.isdigit()]
-    # floor = int(''.join(floor))
-
     user_query = Show.get(user_id=get_user_id(update))
     user_query.section = int(update.callback_query.data[1])
     user_query.save()
     update.callback_query.answer()
-    show_neighbors(bot, update)
+    show_section(bot, update)
 
 
-def show_neighbors(bot, update):
+def show_section(bot, update):
     user_query = Show.get(user_id=get_user_id(update))
     if update.callback_query.data[0] == 's':
         query = User.select().where(
@@ -157,7 +132,7 @@ def set_houses_kbd(bot, update):
                 [InlineKeyboardButton('Будинок 3', callback_data='_h3'),
                  InlineKeyboardButton('Будинок 4', callback_data='_h4')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('Виберіть будинок 🏠 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text('В якому Ви будиноку 🏠 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_houses_kbd'))
 
@@ -174,9 +149,9 @@ def set_section_kbd(bot, update):
                  InlineKeyboardButton('Секція 4', callback_data='_s4')],
                 [InlineKeyboardButton('Секція 5', callback_data='_s5'),
                  InlineKeyboardButton('Секція 6', callback_data='_s6')],
-                [InlineKeyboardButton('Закінчити на цьому', callback_data='show_house')]]
+                [InlineKeyboardButton('Закінчити на цьому', callback_data='??????')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('Виберіть секцію 🔢 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text('В якій Ви секції 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_section_kbd'))
 
@@ -192,15 +167,42 @@ def set_floor_kbd(bot, update):
     for row in range(0, 5):
         floors = []
         for i in range(1, 6):
-            floors.append(InlineKeyboardButton(str(floor), callback_data='f'+str(floor)))
+            floors.append(InlineKeyboardButton(str(floor), callback_data='_f'+str(floor)))
             floor += 1
         keyboard.append(floors)
 
     keyboard.append([InlineKeyboardButton('Закінчити на цьому', callback_data='show_section')])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('Виберіть поверх 🧗 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text('На якому Ви поверсі 🧗 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_floor_kbd'))
+
+
+def save_user_data(bot, update):
+    floor = [s for s in list(update.callback_query.data) if s.isdigit()]
+    floor = int(''.join(floor))
+
+    user = User.get(user_id=get_user_id(update))
+    user.floor = floor
+    user.save()
+    update.callback_query.answer()
+    
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True, text='Ваші дані збережені. Бажаєте подивитись сусідів?')
+
+
+def show_this_house(bot, update):
+    user_query = Show.get(user_id=get_user_id(update))
+
+    query = User.select().where(User.house == user_query.house)
+    neighbors = [str(user.house_view()) + '\n' for user in query]
+
+    show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
+                 + '{}' * len(neighbors)).format(*neighbors)
+                 
+    update.callback_query.answer()
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=True, text=show_list)
 
 
 def main():
@@ -208,13 +210,14 @@ def main():
 
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler("start", start_command))
-    dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='show'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=show_this_house, pattern='^show_this_house$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^h'))
-    # dispatcher.add_handler(CallbackQueryHandler(callback=floor_kbd, pattern='^s'))
     dispatcher.add_handler(CallbackQueryHandler(callback=save_params, pattern='^s'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_houses_kbd, pattern='^edit'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_section_kbd, pattern='^_h'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=save_user_data, pattern='^_f'))
 
     updater.start_polling()
     updater.idle()
