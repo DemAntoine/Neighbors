@@ -1,7 +1,7 @@
 from peewee import SqliteDatabase, IntegerField, Model, DateTimeField, CharField, ForeignKeyField
 from peewee import datetime as peewee_datetime
 from models import User
-from openpyxl import load_workbook
+# from openpyxl import load_workbook
 
 # wb_base = load_workbook(filename='workbook1.xlsx', read_only=False, keep_vba=True)
 # ws_data = wb_base['sheet2']
@@ -11,18 +11,18 @@ from openpyxl import load_workbook
 # users = User.select()
 # for i in range(19, 52):
     
-# User.create(
+User.create(
 
-#     user_id = 219765776,
-#     username = 'demydenko',
-#     first_name = 'Дмитрий',
-#     last_name = 'Демиденко',
+    user_id = 848451586,
+    # username = 'demydenko',
+    first_name = 'А2',
+    # last_name = 'Демиденко',
 
-#     house = 4,
-#     section = 4,
-#     floor = 4,
-#     apartment = 4,
-# )
+    house = 4,
+    section = 4,
+    floor = 4,
+    apartment = 4,
+)
 
 
 # query = User.select().where(User.id > 10)

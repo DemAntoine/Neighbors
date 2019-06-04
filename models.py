@@ -23,17 +23,27 @@ class User(Model):
     updated = DateTimeField(default=peewee_datetime.datetime.now)
 
     def __str__(self):
-        return f'@{self.username} -Ім\'я:{self.first_name} {self.last_name}-Будинок:{self.house}'
+        # inline mention of a user. seems like works only after user write to bot first
+        # <a href="tg://user?id=3680016">inline mention of a user</a>
+        href = f'<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
+        if self.username:
+            return f'{href} @{self.username} {self.floor} поверх'
+        else:
+            return f'{href} {self.floor} поверх'
 
-    def section_view(self):
-        return f'@{self.username or " "} -Ім\'я:{self.first_name} {self.last_name or " "} -- Поверх:{self.floor or " "}'
-        
-    def house_view(self):
-        href = '<a href="tg://user?id=' + str(self.user_id) + '">' + self.first_name + ' ' + (self.last_name or ' ') + '</a>'
-        
-        return href
-        
-# <a href="tg://user?id=3680016">inline mention of a user</a>
+    # def section_view(self):
+    #     href = f'<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
+    #     if self.username:
+    #         return f'{href} @{self.username} {self.floor} поверх'
+    #     else:
+    #         return f'{href} {self.floor} поверх'
+    #
+    # def house_view(self):
+    #     href = f'<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
+    #     if self.username:
+    #         return f'{href} @{self.username} {self.floor} поверх'
+    #     else:
+    #         return f'{href} {self.floor} поверх'
 
 
 class Show(Model):

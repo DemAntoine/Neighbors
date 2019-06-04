@@ -113,21 +113,6 @@ def save_params(bot, update):
     show_section(bot, update)
 
 
-def show_section(bot, update):
-    user_query = Show.get(user_id=get_user_id(update))
-    if update.callback_query.data[0] == 's':
-        query = User.select().where(
-            User.house == user_query.house,
-            User.section == user_query.section)
-        neighbors = [str(user.section_view()) + '\n' for user in query]
-
-        show_list = ('<b>Мешканці секції №' + str(user_query.section) + '</b>:\n'
-                     + '{}' * len(neighbors)).format(*neighbors)
-
-        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
-                        disable_web_page_preview=True, text=show_list)
-
-
 def set_houses_kbd(bot, update):
     """func show keyboard to chose house to show"""
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='_h1'),
@@ -203,7 +188,7 @@ def show_this_house(bot, update):
     for i in range(1, 7):
         neighbors.append('<b>Секція ' + str(i) + '</b>\n')
         for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
-            neighbors.append(str(user.house_view()) + '\n')
+            neighbors.append(str(user) + '\n')
     
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
@@ -211,6 +196,21 @@ def show_this_house(bot, update):
     update.callback_query.answer()
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True, text=show_list)
+
+
+def show_section(bot, update):
+    user_query = Show.get(user_id=get_user_id(update))
+    if update.callback_query.data[0] == 's':
+        query = User.select().where(
+            User.house == user_query.house,
+            User.section == user_query.section)
+        neighbors = [str(user) + '\n' for user in query]
+
+        show_list = ('<b>Мешканці секції №' + str(user_query.section) + '</b>:\n'
+                     + '{}' * len(neighbors)).format(*neighbors)
+
+        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
+                        disable_web_page_preview=True, text=show_list)
 
 
 def main():
