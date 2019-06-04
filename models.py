@@ -26,10 +26,14 @@ class User(Model):
         return f'@{self.username} -Ім\'я:{self.first_name} {self.last_name}-Будинок:{self.house}'
 
     def section_view(self):
-        return f'@{self.username or " "} -Ім\'я:{self.first_name} {self.last_name or " "} Поверх:{self.floor or " "}'
+        return f'@{self.username or " "} -Ім\'я:{self.first_name} {self.last_name or " "} -- Поверх:{self.floor or " "}'
         
     def house_view(self):
-        return f'@{self.username or " "} -- Ім\'я: {self.first_name} {self.last_name or " "} -- Поверх: {self.floor}'
+        href = '<a href="tg://user?id=' + str(self.user_id) + '">' + self.first_name + ' ' + (self.last_name or ' ') + '</a>'
+        
+        return href
+        
+# <a href="tg://user?id=3680016">inline mention of a user</a>
 
 
 class Show(Model):

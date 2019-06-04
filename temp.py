@@ -6,25 +6,27 @@ from openpyxl import load_workbook
 # wb_base = load_workbook(filename='workbook1.xlsx', read_only=False, keep_vba=True)
 # ws_data = wb_base['sheet2']
 
+# ws_data.max_row
 
-# for i in range(2, ws_data.max_row):
+# users = User.select()
+# for i in range(19, 52):
     
-#     User.create(
-    
-#         user_id = ws_data.cell(row=i, column=8).value,
-#         username = ws_data.cell(row=i, column=5).value,
-#         first_name = ws_data.cell(row=i, column=6).value,
-#         last_name = ws_data.cell(row=i, column=7).value,
-    
-#         house = 2,
-#         section = ws_data.cell(row=i, column=4).value,
-#         floor = ws_data.cell(row=i, column=3).value,
-#         apartment = ws_data.cell(row=i, column=9).value,
-#     )
+# User.create(
+
+#     user_id = 219765776,
+#     username = 'demydenko',
+#     first_name = 'Дмитрий',
+#     last_name = 'Демиденко',
+
+#     house = 4,
+#     section = 4,
+#     floor = 4,
+#     apartment = 4,
+# )
 
 
 # query = User.select().where(User.id > 10)
-# query = User.delete().where(User.user_id == 274285845)
+# query = User.delete().where(User.user_id == 219765776)
 # query.execute()
 
 # for i in query:
@@ -34,15 +36,15 @@ from openpyxl import load_workbook
 # # print(peewee_datetime.datetime.today().day)
 
 
-User.create(
+# User.create(
 
-    user_id = 752042597,
-    # username = ws_data.cell(row=i, column=5).value,
-    first_name = 'Iryna',
-    # last_name = 'Костенко',
+#     user_id = 752042597,
+#     # username = ws_data.cell(row=i, column=5).value,
+#     first_name = 'Iryna',
+#     # last_name = 'Костенко',
 
-    house = 2,
-    section = 1,
-    floor = 9,
-    # apartment = ws_data.cell(row=i, column=9).value,
-)
+#     house = 2,
+#     section = 1,
+#     floor = 9,
+#     # apartment = ws_data.cell(row=i, column=9).value,
+# )

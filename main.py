@@ -16,7 +16,7 @@ logging.basicConfig(
 
 def get_user_id(update):
     try:
-        user_id = update.message.from_user.id
+        user_id = update.message.chat_id
     except AttributeError:
         user_id = update.callback_query.message.chat_id
     return user_id
@@ -24,25 +24,25 @@ def get_user_id(update):
 
 def get_username(update):
     try:
-        username = update.message.from_user.username
+        username = update.message.chat.username
     except AttributeError:
-        username = update.callback_query.message.from_user.username
+        username = update.callback_query.message.chat.username
     return username
 
 
 def get_first_name(update):
     try:
-        first_name = update.message.from_user.first_name
+        first_name = update.message.chat.first_name
     except AttributeError:
-        first_name = update.callback_query.message.from_user.first_name
+        first_name = update.callback_query.message.chat.first_name
     return first_name
 
 
 def get_last_name(update):
     try:
-        last_name = update.message.from_user.last_name
+        last_name = update.message.chat.last_name
     except AttributeError:
-        last_name = update.callback_query.message.from_user.last_name
+        last_name = update.callback_query.message.chat.last_name
     return last_name
 
 
@@ -56,18 +56,21 @@ def start_command(bot, update):
         user.first_name = get_first_name(update)
         user.last_name = get_last_name(update)
         user.updated = datetime.now()
-    user.save()
-    edit_or_show_kbd(bot, update)
+        user.save()
+    
     # logging
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'start_command'))
-
+    
+    edit_or_show_kbd(bot, update)
+    
 
 def edit_or_show_kbd(bot, update):
     """func show keyboard to chose: show neighbors or edit own info"""
     keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                [InlineKeyboardButton('Змінити дані ✏', callback_data='edit')]]
+                [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Виберіть:', reply_markup=reply_markup)
+    bot.sendMessage(chat_id=get_user_id(update), text='Що будемо робити ?',
+                    reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'edit_or_show_kbd'))
 
 
@@ -78,7 +81,7 @@ def houses_kbd(bot, update):
                 [InlineKeyboardButton('Будинок 3', callback_data='h3'),
                  InlineKeyboardButton('Будинок 4', callback_data='h4')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('Виберіть будинок 🏠 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text('Який будинок показати ? 🏠 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'houses_kbd'))
 
@@ -95,9 +98,9 @@ def section_kbd(bot, update):
                  InlineKeyboardButton('Секція 4', callback_data='s4')],
                 [InlineKeyboardButton('Секція 5', callback_data='s5'),
                  InlineKeyboardButton('Секція 6', callback_data='s6')],
-                [InlineKeyboardButton('Показати всіх в цьому будинку', callback_data='show_this_house')]]
+                [InlineKeyboardButton('Показати всіх в цьому будинку 🏠', callback_data='show_this_house')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('Виберіть секцію 🔢 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text('Яку секцію показати ? 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd'))
 
@@ -132,7 +135,7 @@ def set_houses_kbd(bot, update):
                 [InlineKeyboardButton('Будинок 3', callback_data='_h3'),
                  InlineKeyboardButton('Будинок 4', callback_data='_h4')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('В якому Ви будиноку 🏠 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text('В якому Ви будиноку ? 🏠 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_houses_kbd'))
 
@@ -151,7 +154,7 @@ def set_section_kbd(bot, update):
                  InlineKeyboardButton('Секція 6', callback_data='_s6')],
                 [InlineKeyboardButton('Закінчити на цьому', callback_data='??????')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('В якій Ви секції 🔢 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text('В якій Ви секції ? 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_section_kbd'))
 
@@ -173,7 +176,7 @@ def set_floor_kbd(bot, update):
 
     keyboard.append([InlineKeyboardButton('Закінчити на цьому', callback_data='show_section')])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('На якому Ви поверсі 🧗 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text('На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_floor_kbd'))
 
@@ -187,9 +190,11 @@ def save_user_data(bot, update):
     user.save()
     update.callback_query.answer()
 
-    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
-                    disable_web_page_preview=True, text='Ваші дані збережені. Бажаєте подивитись сусідів?')
-
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, 
+                    text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
+    start_command(bot, update)
+    logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_user_data'))
+    
 
 def show_this_house(bot, update):
     user_query = Show.get(user_id=get_user_id(update))
@@ -199,7 +204,7 @@ def show_this_house(bot, update):
         neighbors.append('<b>Секція ' + str(i) + '</b>\n')
         for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
             neighbors.append(str(user.house_view()) + '\n')
-
+    
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
