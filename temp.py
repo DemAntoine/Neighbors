@@ -1,7 +1,7 @@
 from peewee import SqliteDatabase, IntegerField, Model, DateTimeField, CharField, ForeignKeyField
 from peewee import datetime as peewee_datetime
 from models import User
-from openpyxl import load_workbook
+# from openpyxl import load_workbook
 
 # wb_base = load_workbook(filename='workbook1.xlsx', read_only=False, keep_vba=True)
 # ws_data = wb_base['sheet2']
