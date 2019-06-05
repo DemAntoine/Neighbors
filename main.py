@@ -136,8 +136,7 @@ def set_section_kbd(bot, update):
                 [InlineKeyboardButton('Секція 3', callback_data='_s3'),
                  InlineKeyboardButton('Секція 4', callback_data='_s4')],
                 [InlineKeyboardButton('Секція 5', callback_data='_s5'),
-                 InlineKeyboardButton('Секція 6', callback_data='_s6')],
-                [InlineKeyboardButton('Закінчити на цьому', callback_data='??????')]]
+                 InlineKeyboardButton('Секція 6', callback_data='_s6')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('В якій Ви секції ? 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
@@ -159,7 +158,7 @@ def set_floor_kbd(bot, update):
             floor += 1
         keyboard.append(floors)
 
-    keyboard.append([InlineKeyboardButton('Закінчити на цьому', callback_data='show_section')])
+    # keyboard.append([InlineKeyboardButton('Закінчити на цьому', callback_data='show_section')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
     update.callback_query.answer()
@@ -196,22 +195,27 @@ def show_this_house(bot, update):
     update.callback_query.answer()
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True, text=show_list)
+    
+    logging.info('user_id: %d command: %s' % (get_user_id(update), 'show_this_house'))
+    start_command(bot, update)
 
 
 def show_section(bot, update):
     user_query = Show.get(user_id=get_user_id(update))
-    if update.callback_query.data[0] == 's':
-        query = User.select().where(
-            User.house == user_query.house,
-            User.section == user_query.section)
-        neighbors = [str(user) + '\n' for user in query]
+    # if update.callback_query.data[0] == 's':
+    query = User.select().where(
+        User.house == user_query.house,
+        User.section == user_query.section)
+    neighbors = [str(user) + '\n' for user in query]
 
-        show_list = ('<b>Мешканці секції №' + str(user_query.section) + '</b>:\n'
-                     + '{}' * len(neighbors)).format(*neighbors)
+    show_list = ('<b>Мешканці секції №' + str(user_query.section) + '</b>:\n'
+                 + '{}' * len(neighbors)).format(*neighbors)
 
-        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
-                        disable_web_page_preview=True, text=show_list)
-
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=True, text=show_list)
+    
+    logging.info('user_id: %d command: %s' % (get_user_id(update), 'show_section'))
+    start_command(bot, update)
 
 def main():
     updater = Updater(KEY)
