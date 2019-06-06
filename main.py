@@ -191,8 +191,6 @@ def set_apartment_kbd(bot, update):
 def apartment_save(bot, update):
     user2 = Show.get(user_id=get_user_id(update))
     if user2.msg_apart_mode:
-        print('True')
-
         text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
         text_failed = f'Вибачте, але номер квартири має містити <b>тільки цифри</b>.' \
             f'Спробуйте ще раз, або нажміть кнопку відмови'
