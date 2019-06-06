@@ -212,7 +212,7 @@ def show_this_house(bot, update):
     neighbors = []
 
     for i in range(1, 7):
-        neighbors.append('\n' + '📭 <b>Секція '.rjust(10, ' ') + str(i) + '</b>' + '\n')
+        neighbors.append('\n<pre>       📭 Секція ' + str(i) + '</pre>\n')
         for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
             neighbors.append(str(user) + '\n')
     
@@ -225,11 +225,22 @@ def show_this_house(bot, update):
     #              + '{}' * len(neighbors)).format(*neighbors)
     
     print(len(show_list))
+    # print((show_list))
     
+    if len(show_list) < 2500:
+        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list)
+    else:
+        part_1, part_2, part_3 = show_list.partition('<pre>       📭 Секція 4</pre>\n')
+        # print(part_1)
+        # print(part_2.rjust(30, " "))
+        # print(part_3)
+        some_str = '<pre>       📭 Секція ' + str(i) + '</pre>\n'
+        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=part_1[:-2])
+        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=part_2 + part_3)
+        # bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text='📭 <b>Секція 4</b>'.rjust(30, " ") + part_3)
+        
+                    
     update.callback_query.answer()
-    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
-                    disable_web_page_preview=True, text=show_list)
-    
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'show_this_house'))
     start_command(bot, update)
 
