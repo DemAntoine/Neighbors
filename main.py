@@ -171,6 +171,10 @@ def set_apartment_kbd(bot, update):
     user = User.get(user_id=get_user_id(update))
     user.floor = floor
     user.save()
+    
+    user2 = Show.get(user_id=get_user_id(update))
+    user2.msg_apart_mode = True
+    user2.save()
 
     keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -181,28 +185,40 @@ def set_apartment_kbd(bot, update):
 
 
 def apartment_save(bot, update):
+    user2 = Show.get(user_id=get_user_id(update))
+    if user2.msg_apart_mode:
+        print('True')
     
-    text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
-    text_failed = 'Вибачте, але номер квартири має містити <b>тільки цифри</b>. Спробуйте ще раз, або нажміть кнопку відмови'
-    try:
-        apartment = int(update.message.text)
-        user = User.get(user_id=get_user_id(update))
-        user.apartment = apartment
-        user.save()
-        bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
-        logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
-        start_command(bot, update)
-    except ValueError:
-        keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text(text=text_failed, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-        logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
+        text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
+        text_failed = 'Вибачте, але номер квартири має містити <b>тільки цифри</b>. Спробуйте ще раз, або нажміть кнопку відмови'
+        try:
+            apartment = int(update.message.text)
+            user = User.get(user_id=get_user_id(update))
+            user.apartment = apartment
+            user.save()
+            bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
+            logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
+            user2.msg_apart_mode = False
+            user2.save()
+            start_command(bot, update)
+        except ValueError:
+            keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            update.message.reply_text(text=text_failed, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+            logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
+    else:
+        dont_understand(bot, update)
 
 
 def save_user_data(bot, update):
     update.callback_query.answer()
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, 
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
+                    
+    user2 = Show.get(user_id=get_user_id(update))
+    user2.msg_apart_mode = False
+    user2.save()
+    
     start_command(bot, update)
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_user_data'))
     
@@ -253,6 +269,10 @@ def show_section(bot, update):
     
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'show_section'))
     start_command(bot, update)
+
+
+def dont_understand(bot, update):
+    print('non capisco')
 
 
 def main():
