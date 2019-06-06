@@ -181,27 +181,26 @@ def set_apartment_kbd(bot, update):
 
 
 def apartment_save(bot, update):
-    apartment = update.message.text
-
-    user = User.get(user_id=get_user_id(update))
-    user.apartment = apartment
-    user.save()
-
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'apart_save'))
-    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
-                    text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
-    start_command(bot, update)
+    
+    text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
+    text_failed = 'Вибачте, але номер квартири має містити <b>тільки цифри</b>. Спробуйте ще раз, або нажміть кнопку відмови'
+    try:
+        apartment = int(update.message.text)
+        user = User.get(user_id=get_user_id(update))
+        user.apartment = apartment
+        user.save()
+        bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
+        logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
+        start_command(bot, update)
+    except ValueError:
+        keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text(text=text_failed, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
 
 
 def save_user_data(bot, update):
-    floor = [s for s in list(update.callback_query.data) if s.isdigit()]
-    floor = int(''.join(floor))
-
-    user = User.get(user_id=get_user_id(update))
-    user.floor = floor
-    user.save()
     update.callback_query.answer()
-
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, 
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
     start_command(bot, update)
@@ -213,13 +212,20 @@ def show_this_house(bot, update):
     neighbors = []
 
     for i in range(1, 7):
-        neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i) + '</b>' + '\n\n')
+        neighbors.append('\n' + '📭 <b>Секція '.rjust(10, ' ') + str(i) + '</b>' + '\n')
         for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
             neighbors.append(str(user) + '\n')
     
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
-
+    
+    # for i in range(70):
+    #     neighbors.append('<a href="tg://user?id=3680016">inline mention of a user</a>\n')
+    #     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
+    #              + '{}' * len(neighbors)).format(*neighbors)
+    
+    print(len(show_list))
+    
     update.callback_query.answer()
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True, text=show_list)
@@ -258,7 +264,8 @@ def main():
     dispatcher.add_handler(CallbackQueryHandler(callback=set_houses_kbd, pattern='^edit'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_section_kbd, pattern='^_h'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=save_user_data, pattern='^_f'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=set_apartment_kbd, pattern='^_f'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$'))
 
     updater.start_polling()
     updater.idle()
