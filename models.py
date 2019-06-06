@@ -28,12 +28,12 @@ class User(Model):
         href = f'<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
         if self.username:
             if self.apartment:
-                return f'{href} @{self.username} <b>{self.floor or "?"}</b> <i>поверх</i> <b>{self.apartment}</b> <i>кв</i>'
+                return f'{href} @{self.username} <b>{self.floor or "?"}</b> <i>поверх</i>  <b>{self.apartment}</b> <i>кв</i>'
             else:
                 return f'{href} @{self.username} <b>{self.floor or "?"}</b> <i>поверх</i>'
         else:
             if self.apartment:
-                return f'{href} <b>{self.floor or "?"}</b> <i>поверх</i> <b>{self.apartment}</b> <i>кв</i>'
+                return f'{href} <b>{self.floor or "?"}</b> <i>поверх</i>  <b>{self.apartment}</b> <i>кв</i>'
             else:
                 return f'{href} <b>{self.floor or "?"}</b> <i>поверх</i>'
 
