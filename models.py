@@ -25,17 +25,18 @@ class User(Model):
     def __str__(self):
         """ inline mention of a user. seems like works only after user write to bot first
             <a href="tg://user?id=3680016">inline mention of a user</a>"""
+            
         href = f'<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
         if self.username:
             if self.apartment:
-                return f'{href} @{self.username} <b>{self.floor or "?"}</b> <i>поверх</i>  <b>{self.apartment}</b> <i>кв</i>'
+                return f'{href} @{self.username}     <b>{self.floor or "?"}</b> ⏫ {self.apartment} 🚪'
             else:
-                return f'{href} @{self.username} <b>{self.floor or "?"}</b> <i>поверх</i>'
+                return f'{href} @{self.username}     <b>{self.floor or "?"}</b> ⏫'
         else:
             if self.apartment:
-                return f'{href} <b>{self.floor or "?"}</b> <i>поверх</i>  <b>{self.apartment}</b> <i>кв</i>'
+                return f'{href}    <b>{self.floor or "?"}</b> ⏫ {self.apartment} 🚪'
             else:
-                return f'{href} <b>{self.floor or "?"}</b> <i>поверх</i>'
+                return f'{href}    <b>{self.floor or "?"}</b> ⏫'
 
 
 class Show(Model):

@@ -242,24 +242,19 @@ def show_house(bot, update):
     neighbors = []
 
     for i in range(1, 7):
-        neighbors.append('\n<pre>       📭 Секція ' + str(i) + '</pre>\n')
+        neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i) + '</b>' + '\n')
         for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
             neighbors.append(str(user) + '\n')
 
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
-    # for i in range(70):
-    #     neighbors.append('<a href="tg://user?id=3680016">inline mention of a user</a>\n')
-    #     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
-    #              + '{}' * len(neighbors)).format(*neighbors)
-
-    if len(show_list) < 2500:
-        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list)
-    else:
-        part_1, part_2, part_3 = show_list.partition('<pre>       📭 Секція 4</pre>\n')
-        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=part_1[:-2])
-        bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=part_2 + part_3)
+    # if len(show_list) < 2500:
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list)
+    # else:
+    #     part_1, part_2, part_3 = show_list.partition('<pre>       📭 Секція 4</pre>\n')
+    #     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=part_1[:-2])
+    #     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=part_2 + part_3)
 
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'show_this_house'))
@@ -289,6 +284,7 @@ def show_section(bot, update):
 
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True, text=show_list)
+    update.callback_query.answer()
 
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'show_section'))
     start_command(bot, update)
