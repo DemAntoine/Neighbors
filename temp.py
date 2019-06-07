@@ -2,27 +2,39 @@ from peewee import SqliteDatabase, IntegerField, Model, DateTimeField, CharField
 from peewee import datetime as peewee_datetime
 from models import User, Show
 # from openpyxl import load_workbook
-
-# wb_base = load_workbook(filename='workbook1.xlsx', read_only=False, keep_vba=True)
-# ws_data = wb_base['sheet2']
+#
+# wb_base = load_workbook(filename='data.xlsm', read_only=False, keep_vba=True)
+# ws_data = wb_base['Sheet3']
 
 # # ws_data.max_row
 
-# # users = User.select()
-# for i in range(29, 76):
-    
+# users = User.select()
+# for i in range(2, 72):
 #     User.create(
-#         user_id = ws_data.cell(row=i, column=1).value,
-#         username = ws_data.cell(row=i, column=2).value,
-#         first_name = ws_data.cell(row=i, column=3).value,
-#         last_name = ws_data.cell(row=i, column=4).value,
-    
-#         house = ws_data.cell(row=i, column=5).value,
-#         section = ws_data.cell(row=i, column=6).value,
-#         floor = ws_data.cell(row=i, column=7).value,
-#         apartment = ws_data.cell(row=i, column=8).value,
+#         user_id=ws_data.cell(row=i, column=1).value,
+#         username=ws_data.cell(row=i, column=2).value,
+#         first_name=ws_data.cell(row=i, column=3).value,
+#         last_name=ws_data.cell(row=i, column=4).value,
+#
+#         house=ws_data.cell(row=i, column=5).value,
+#         section=ws_data.cell(row=i, column=6).value,
+#         floor=ws_data.cell(row=i, column=7).value,
+#         apartment=ws_data.cell(row=i, column=8).value,
 #     )
 
+#
+# users = User.select()
+# for i, user in enumerate(users, start=2):
+#         ws_data.cell(row=i, column=1).value = user.user_id
+#         ws_data.cell(row=i, column=2).value = user.username
+#         ws_data.cell(row=i, column=3).value = user.first_name
+#         ws_data.cell(row=i, column=4).value = user.last_name
+#
+#         ws_data.cell(row=i, column=5).value = user.house
+#         ws_data.cell(row=i, column=6).value = user.section
+#         ws_data.cell(row=i, column=7).value = user.floor
+#         ws_data.cell(row=i, column=8).value = user.apartment
+# wb_base.save(filename='data.xlsm')
 
 # query = User.select().where(User.id > 10)
 # query = User.delete().where(User.user_id == 138666641)
@@ -50,47 +62,7 @@ from models import User, Show
 # #     apartment = ws_data.cell(row=i, column=9).value,
 # # )
 
-# # Show.create(
-
-# #     user_id = 219765776,
-# # )
-
-# User.create(
-
-#     user_id = 138666641,
-#     first_name = 'Artem',
-#     last_name = 'Zhuravlov',
-#     house = 3,
-#     section = 3,
-#     floor = 16,
-#     apartment = 337,
-    
-# )
-
-# User.create(
-
-#     user_id = 559566230,
-#     first_name = 'Maas',
-#     # last_name = 'Zhuravlov',
-#     house = 3,
-#     section = 3,
-#     floor = 16,
-#     # apartment = 337,
-    
-# )
-
 
 # Show.drop_table()
 # Show.create_table()
 
-
-
-# print(string)
-# part_1, part_2, part_3 = string.partition('<b>Секція 4')
-# string.partition('<b>Секція 3</b>')[0][:-2]
-# part_2 = string.rfind('<b>Секція 3</b>')
-# part_3 = string[:part_2]
-# part_4 = string[part_2:]
-# print(part_1[:-2])
-# print(part_2+part_3)
-# print(part_4)

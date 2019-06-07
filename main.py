@@ -65,10 +65,14 @@ def start_command(bot, update):
 
 def edit_or_show_kbd(bot, update):
     """func show keyboard to chose: show neighbors or edit own info"""
-    keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
-                [InlineKeyboardButton('Сусіди по будинку 🏠', callback_data='house_neighbors'),
-                 InlineKeyboardButton('Сусіди по секції 🔢', callback_data='section_neighbors')]]
+    if User.get(user_id=get_user_id(update)).house and User.get(user_id=get_user_id(update)).section:
+        keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
+                    [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
+                    [InlineKeyboardButton('Сусіди по будинку 🏠', callback_data='house_neighbors'),
+                     InlineKeyboardButton('Сусіди по секції 🔢', callback_data='section_neighbors')]]
+    else:
+        keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
+                    [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=get_user_id(update), text='Вибери :',
                     reply_markup=reply_markup, parse_mode=ParseMode.HTML)
@@ -116,12 +120,17 @@ def save_params(bot, update):
 
 def set_houses_kbd(bot, update):
     """func show keyboard to chose house to show"""
+    if not User.get(user_id=get_user_id(update)).house:
+        text = 'В якому Ви будинку ? 🏠 :'
+    else:
+        text = 'Змінюємо Ваші дані:\n' + User.get(user_id=get_user_id(update)).setting_str() + '\nВ якому Ви будинку ? 🏠 :'
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='_h1'),
                  InlineKeyboardButton('Будинок 2', callback_data='_h2')],
                 [InlineKeyboardButton('Будинок 3', callback_data='_h3'),
                  InlineKeyboardButton('Будинок 4', callback_data='_h4')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('В якому Ви будинку ? 🏠 :', reply_markup=reply_markup)
+    update.callback_query.message.reply_text(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
     update.callback_query.answer()
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_houses_kbd'))
 

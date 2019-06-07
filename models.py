@@ -38,6 +38,10 @@ class User(Model):
             else:
                 return f'{href}    {self.floor or "?"} ⏫'
 
+    def setting_str(self):
+        return f'Будинок <b>{self.house}</b> Секція <b>{self.section or "?"}</b> поверх ' \
+            f'<b>{self.floor or "?"}</b> кв. <b>{self.apartment or "?"}</b>'
+
 
 class Show(Model):
     class Meta:
