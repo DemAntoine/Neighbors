@@ -42,6 +42,9 @@ class User(Model):
         return f'Будинок <b>{self.house}</b> Секція <b>{self.section or "?"}</b> поверх ' \
             f'<b>{self.floor or "?"}</b> кв. <b>{self.apartment or "?"}</b>'
 
+    def edit_btn_str(self):
+        return f'Будинок {self.house} Секція {self.section or "?"} поверх {self.floor or "?"} кв. {self.apartment or "?"}'
+
 
 class Show(Model):
     class Meta:
