@@ -26,24 +26,24 @@ class User(Model):
         """ inline mention of a user. seems like works only after user write to bot first
             <a href="tg://user?id=3680016">inline mention of a user</a>"""
             
-        href = f'<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
+        href = f'🔹<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
         if self.username:
             if self.apartment:
-                return f'{href} @{self.username}     {self.floor or "?"} ⏫ {self.apartment} 🚪'
+                return f'{href} @{self.username}     {self.floor or "?"} пов. {self.apartment} 🚪'
             else:
-                return f'{href} @{self.username}     {self.floor or "?"} ⏫'
+                return f'{href} @{self.username}     {self.floor or "?"} пов.'
         else:
             if self.apartment:
-                return f'{href}    {self.floor or "?"} ⏫ {self.apartment} 🚪'
+                return f'{href}    {self.floor or "?"} пов. {self.apartment} 🚪'
             else:
-                return f'{href}    {self.floor or "?"} ⏫'
+                return f'{href}    {self.floor or "?"} пов.'
 
     def setting_str(self):
         return f'Будинок <b>{self.house}</b> Секція <b>{self.section or "?"}</b> поверх ' \
             f'<b>{self.floor or "?"}</b> кв. <b>{self.apartment or "?"}</b>'
 
     def edit_btn_str(self):
-        return f'Будинок {self.house} Секція {self.section or "?"} поверх {self.floor or "?"} кв. {self.apartment or "?"}'
+        return f'Будинок {self.house} Секція {self.section or "?"} пов. {self.floor or "?"} кв. {self.apartment or "?"}'
 
 
 class Show(Model):

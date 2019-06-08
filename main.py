@@ -52,12 +52,13 @@ def start_command(bot, update):
     user, created = User.get_or_create(user_id=get_user_id(update))
     Show.get_or_create(user_id=get_user_id(update))
     # check if user changed own username. If so - update
-    if user.username != get_username(update) or user.first_name != get_first_name(update):
-        user.username = get_username(update)
-        user.first_name = get_first_name(update)
-        user.last_name = get_last_name(update)
-        user.updated = datetime.now()
-        user.save()
+    if user.username != get_username(update) or user.first_name != get_first_name(update) or user.last_name != get_last_name(update):
+        for user in User.select().where(User.user_id == get_user_id(update)):
+            user.username = get_username(update)
+            user.first_name = get_first_name(update)
+            user.last_name = get_last_name(update)
+            user.updated = datetime.now()
+            user.save()
 
     # logging
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'start_command'))
@@ -90,7 +91,6 @@ def check_owns(bot, update):
         if not len(User.select().where(User.user_id == get_user_id(update))) > 1:
             show_section(bot, update)
             return
-
 
     if not User.get(user_id=get_user_id(update)).house:
         text = 'В якому Ви будинку ? 🏠 :'
@@ -183,9 +183,6 @@ def save_params(bot, update):
 
 def set_houses_kbd(bot, update, text=''):
     """func show keyboard to chose house to show"""
-
-    # user = User.select().where(User.user_id == get_user_id(update))[0]
-
     if not User.get(user_id=get_user_id(update)).house:
         text = text
     elif len(User.select().where(User.user_id == get_user_id(update))) > 1:
@@ -205,8 +202,6 @@ def set_houses_kbd(bot, update, text=''):
 
 def set_section_kbd(bot, update):
     """func show keyboard to chose section to show"""
-
-    # user = User.get(user_id=get_user_id(update))
     user = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
     user.house = int(update.callback_query.data[2])
     user.save()
@@ -249,7 +244,6 @@ def set_apartment_kbd(bot, update):
     floor = [s for s in list(update.callback_query.data) if s.isdigit()]
     floor = int(''.join(floor))
 
-    # user = User.get(user_id=get_user_id(update))
     user = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
     user.floor = floor
     user.save()

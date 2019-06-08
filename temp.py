@@ -2,14 +2,14 @@ from peewee import SqliteDatabase, IntegerField, Model, DateTimeField, CharField
 from peewee import datetime as peewee_datetime
 from models import User, Show
 # from openpyxl import load_workbook
-#
+# #
 # wb_base = load_workbook(filename='data.xlsm', read_only=False, keep_vba=True)
-# ws_data = wb_base['Sheet3']
+# ws_data = wb_base['to_add']
 
 # # ws_data.max_row
 
 # users = User.select()
-# for i in range(2, 72):
+# for i in range(2, 16):
 #     User.create(
 #         user_id=ws_data.cell(row=i, column=1).value,
 #         username=ws_data.cell(row=i, column=2).value,
