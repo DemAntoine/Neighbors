@@ -285,10 +285,10 @@ def show_section(bot, update):
     # user_query = Show.get(user_id=get_user_id(update))
     query = User.select().where(
         User.house == user_query.house,
-        User.section == user_query.section)
+        User.section == user_query.section).order_by(User.floor)
     neighbors = [str(user) + '\n' for user in query]
 
-    show_list = ('<b>Мешканці секції №' + str(user_query.section) + '</b>:\n'
+    show_list = ('<b>Мешканці секції № ' + str(user_query.section) + ' Будинку № ' + str(user_query.section) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
