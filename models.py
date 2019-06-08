@@ -53,6 +53,8 @@ class Show(Model):
     house = IntegerField(null=True)
     section = IntegerField(null=True)
     floor = IntegerField(null=True)
+
+    owns = IntegerField(null=True)
     
     msg_apart_mode = BooleanField(null=True, default=False)
 
