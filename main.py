@@ -6,6 +6,7 @@ import os
 import logging
 from datetime import datetime
 from models import User, Show
+from constants import help_msg, about_msg
 
 KEY = sys.argv[1]
 print('key ' + KEY[:8] + '... successfully used')
@@ -47,6 +48,28 @@ def get_last_name(update):
     return last_name
 
 
+def chosen_owns(update):
+    try:
+        user = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
+    except IndexError:
+        user = User.select().where(User.user_id == get_user_id(update))[0]
+    return user
+
+
+def is_changed(update):
+    # check if user exist in DB (both tables). If not - create
+    user, created = User.get_or_create(user_id=get_user_id(update))
+    Show.get_or_create(user_id=get_user_id(update))
+    # check if user changed own username. If so - update
+    if user.username != get_username(update) or user.first_name != get_first_name(update) or user.last_name != get_last_name(update):
+        for user in User.select().where(User.user_id == get_user_id(update)):
+            user.username = get_username(update)
+            user.first_name = get_first_name(update)
+            user.last_name = get_last_name(update)
+            user.updated = datetime.now()
+            user.save()
+
+
 def start_command(bot, update):
     # check if user exist in DB (both tables). If not - create
     user, created = User.get_or_create(user_id=get_user_id(update))
@@ -66,6 +89,43 @@ def start_command(bot, update):
     edit_or_show_kbd(bot, update)
 
 
+def help_command(bot, update):
+    user, created = User.get_or_create(user_id=get_user_id(update))
+    Show.get_or_create(user_id=get_user_id(update))
+    if user.username != get_username(update) or user.first_name != get_first_name(
+            update) or user.last_name != get_last_name(update):
+        for user in User.select().where(User.user_id == get_user_id(update)):
+            user.username = get_username(update)
+            user.first_name = get_first_name(update)
+            user.last_name = get_last_name(update)
+            user.updated = datetime.now()
+            user.save()
+
+    bot.sendMessage(chat_id=get_user_id(update), text=help_msg, parse_mode=ParseMode.HTML)
+
+    # logging
+    logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'help_command'))
+
+
+def about_command(bot, update):
+    user, created = User.get_or_create(user_id=get_user_id(update))
+    Show.get_or_create(user_id=get_user_id(update))
+    if user.username != get_username(update) or user.first_name != get_first_name(
+            update) or user.last_name != get_last_name(update):
+        for user in User.select().where(User.user_id == get_user_id(update)):
+            user.username = get_username(update)
+            user.first_name = get_first_name(update)
+            user.last_name = get_last_name(update)
+            user.updated = datetime.now()
+            user.save()
+
+    bot.sendMessage(chat_id=get_user_id(update), text=about_msg,
+                    parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+
+    # logging
+    logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'about_command'))
+
+
 def edit_or_show_kbd(bot, update):
     """func show keyboard to chose: show neighbors or edit own info"""
     if User.get(user_id=get_user_id(update)).house and User.get(user_id=get_user_id(update)).section:
@@ -77,7 +137,7 @@ def edit_or_show_kbd(bot, update):
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.sendMessage(chat_id=get_user_id(update), text='Вибери :',
+    bot.sendMessage(chat_id=get_user_id(update), text='Меню:',
                     reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'edit_or_show_kbd'))
 
@@ -202,7 +262,7 @@ def set_houses_kbd(bot, update, text=''):
 
 def set_section_kbd(bot, update):
     """func show keyboard to chose section to show"""
-    user = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
+    user = chosen_owns(update)
     user.house = int(update.callback_query.data[2])
     user.save()
 
@@ -221,7 +281,7 @@ def set_section_kbd(bot, update):
 def set_floor_kbd(bot, update):
     """func show keyboard to chose section to show"""
     # user = User.get(user_id=get_user_id(update))
-    user = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
+    user = chosen_owns(update)
     user.section = int(update.callback_query.data[2])
     user.save()
 
@@ -244,7 +304,7 @@ def set_apartment_kbd(bot, update):
     floor = [s for s in list(update.callback_query.data) if s.isdigit()]
     floor = int(''.join(floor))
 
-    user = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
+    user = chosen_owns(update)
     user.floor = floor
     user.save()
 
@@ -268,7 +328,7 @@ def apartment_save(bot, update):
             f'Спробуйте ще раз, або нажміть кнопку відмови'
         try:
             apartment = int(update.message.text)
-            user = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
+            user = chosen_owns(update)
             user.apartment = apartment
             user.save()
             bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
@@ -308,7 +368,7 @@ def show_house(bot, update):
         user_query = Show.get(user_id=get_user_id(update))
     else:
         # if user want see own house and have one
-        user_query = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
+        user_query = chosen_owns(update)
 
     neighbors = []
 
@@ -334,7 +394,7 @@ def show_house(bot, update):
 
 def show_section(bot, update, some_section=False):
     if not some_section:
-        user_query = User.select().where(User.user_id == get_user_id(update))[Show.get(user_id=get_user_id(update)).owns or 0]
+        user_query = chosen_owns(update)
     else:
         user_query = Show.get(user_id=get_user_id(update))
 
@@ -359,6 +419,8 @@ def main():
 
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler("start", start_command))
+    dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("about", about_command))
     dispatcher.add_handler(MessageHandler(Filters.text, apartment_save))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
