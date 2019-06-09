@@ -5,4 +5,5 @@ logfile.log
 temp.py
 temp2.py
 data.xlsm
+users.db
 venv/

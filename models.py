@@ -45,6 +45,19 @@ class User(Model):
     def edit_btn_str(self):
         return f'Будинок {self.house} Секція {self.section or "?"} пов. {self.floor or "?"} кв. {self.apartment or "?"}'
 
+    def user_created(self):
+        href = f'🔹<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
+        if self.username:
+            if self.apartment:
+                return f'{href} @{self.username} секция {self.section} этаж {self.floor or "?"} кв. {self.apartment}'
+            else:
+                return f'{href} @{self.username} секция {self.section} этаж {self.floor or "?"}'
+        else:
+            if self.apartment:
+                return f'{href} секция {self.section} этаж {self.floor or "?"} кв. {self.apartment}'
+            else:
+                return f'{href} секция {self.section} этаж {self.floor or "?"}'
+
 
 class Show(Model):
     class Meta:

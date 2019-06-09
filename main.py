@@ -71,18 +71,7 @@ def is_changed(update):
 
 
 def start_command(bot, update):
-    # check if user exist in DB (both tables). If not - create
-    user, created = User.get_or_create(user_id=get_user_id(update))
-    Show.get_or_create(user_id=get_user_id(update))
-    # check if user changed own username. If so - update
-    if user.username != get_username(update) or user.first_name != get_first_name(update) or user.last_name != get_last_name(update):
-        for user in User.select().where(User.user_id == get_user_id(update)):
-            user.username = get_username(update)
-            user.first_name = get_first_name(update)
-            user.last_name = get_last_name(update)
-            user.updated = datetime.now()
-            user.save()
-
+    is_changed(update)
     # logging
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'start_command'))
 
@@ -90,40 +79,28 @@ def start_command(bot, update):
 
 
 def help_command(bot, update):
-    user, created = User.get_or_create(user_id=get_user_id(update))
-    Show.get_or_create(user_id=get_user_id(update))
-    if user.username != get_username(update) or user.first_name != get_first_name(
-            update) or user.last_name != get_last_name(update):
-        for user in User.select().where(User.user_id == get_user_id(update)):
-            user.username = get_username(update)
-            user.first_name = get_first_name(update)
-            user.last_name = get_last_name(update)
-            user.updated = datetime.now()
-            user.save()
+    is_changed(update)
 
     bot.sendMessage(chat_id=get_user_id(update), text=help_msg, parse_mode=ParseMode.HTML)
-
     # logging
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'help_command'))
 
 
 def about_command(bot, update):
-    user, created = User.get_or_create(user_id=get_user_id(update))
-    Show.get_or_create(user_id=get_user_id(update))
-    if user.username != get_username(update) or user.first_name != get_first_name(
-            update) or user.last_name != get_last_name(update):
-        for user in User.select().where(User.user_id == get_user_id(update)):
-            user.username = get_username(update)
-            user.first_name = get_first_name(update)
-            user.last_name = get_last_name(update)
-            user.updated = datetime.now()
-            user.save()
+    is_changed(update)
 
     bot.sendMessage(chat_id=get_user_id(update), text=about_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-
     # logging
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'about_command'))
+
+
+def user_created_report(bot):
+    created_user = User.select().where(User.house > 0).order_by(User.created)[-1]
+    bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML,
+                    text=f'В базе создан новый пользователь:\n'
+                    f'{created_user.user_created()}'
+                    )
 
 
 def edit_or_show_kbd(bot, update):
@@ -335,6 +312,9 @@ def apartment_save(bot, update):
             logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
             user_mode.msg_apart_mode = False
             user_mode.save()
+
+            user_created_report(bot)
+
             start_command(bot, update)
         except ValueError:
             keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
@@ -357,6 +337,12 @@ def save_user_data(bot, update):
     user_mode = Show.get(user_id=get_user_id(update))
     user_mode.msg_apart_mode = False
     user_mode.save()
+
+    user = chosen_owns(update)
+    user.apartment = None
+    user.save()
+
+    user_created_report(bot)
 
     start_command(bot, update)
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_user_data'))
