@@ -101,6 +101,10 @@ def user_created_report(bot):
                     text=f'В базе создан новый пользователь:\n'
                     f'{created_user.user_created()}'
                     )
+    bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML,
+                    text=f'В базе создан новый пользователь:\n'
+                    f'{created_user.user_created()}'
+                    )
 
 
 def edit_or_show_kbd(bot, update):
