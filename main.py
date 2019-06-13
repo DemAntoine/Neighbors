@@ -265,6 +265,7 @@ def set_floor_kbd(bot, update):
     # user = User.get(user_id=get_user_id(update))
     user = chosen_owns(update)
     user.section = int(update.callback_query.data[2])
+    user.updated = datetime.now()
     user.save()
 
     keyboard = []
@@ -289,6 +290,7 @@ def set_apartment_kbd(bot, update):
 
     user = chosen_owns(update)
     user.floor = floor
+    user.updated = datetime.now()
     user.save()
 
     user_mode = Show.get(user_id=get_user_id(update))
@@ -313,6 +315,7 @@ def apartment_save(bot, update):
             apartment = int(update.message.text)
             user = chosen_owns(update)
             user.apartment = apartment
+            user.updated = datetime.now()
             user.save()
             bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
             logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
@@ -346,6 +349,7 @@ def save_user_data(bot, update):
 
     user = chosen_owns(update)
     user.apartment = None
+    user.updated = datetime.now()
     user.save()
 
     user_created_report(bot)
