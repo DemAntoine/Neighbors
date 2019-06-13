@@ -99,10 +99,8 @@ def user_created_report(bot):
     created_user = User.select().where(User.house > 0).order_by(User.created)[-1]
     
     if created_user.updated.second - created_user.created.second > 10:
-        print(created_user.updated.second)
         text = 'В базе ОБНОВЛЕН пользователь:\n'
     else:
-        print(created_user.updated.second)
         text = 'В базе СОЗДАН пользователь:\n'
     
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML,
