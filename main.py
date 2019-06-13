@@ -223,7 +223,7 @@ def save_params(bot, update):
 
 
 def set_houses_kbd(bot, update, text=''):
-    """func show keyboard to chose house to show"""
+    """func show keyboard to chose its own house"""
     if not User.get(user_id=get_user_id(update)).house:
         text = text
     elif len(User.select().where(User.user_id == get_user_id(update))) > 1:
@@ -242,9 +242,10 @@ def set_houses_kbd(bot, update, text=''):
 
 
 def set_section_kbd(bot, update):
-    """func show keyboard to chose section to show"""
+    """func show keyboard to chose its own section"""
     user = chosen_owns(update)
     user.house = int(update.callback_query.data[2])
+    user.updated = datetime.now()
     user.save()
 
     keyboard = [[InlineKeyboardButton('Секція 1', callback_data='_s1'),
@@ -260,7 +261,7 @@ def set_section_kbd(bot, update):
 
 
 def set_floor_kbd(bot, update):
-    """func show keyboard to chose section to show"""
+    """func show keyboard to chose its own floor"""
     # user = User.get(user_id=get_user_id(update))
     user = chosen_owns(update)
     user.section = int(update.callback_query.data[2])
@@ -282,6 +283,7 @@ def set_floor_kbd(bot, update):
 
 
 def set_apartment_kbd(bot, update):
+    """func show message with ask to tell its own appartment"""
     floor = [s for s in list(update.callback_query.data) if s.isdigit()]
     floor = int(''.join(floor))
 
