@@ -20,7 +20,7 @@ class User(Model):
     apartment = IntegerField(null=True)
 
     created = DateTimeField(default=peewee_datetime.datetime.now)
-    updated = DateTimeField(default=peewee_datetime.datetime.now)
+    updated = DateTimeField(default=None, null=True)
 
     def __str__(self):
         """ inline mention of a user. seems like works only after user write to bot first
@@ -49,14 +49,14 @@ class User(Model):
         href = f'🔹<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
         if self.username:
             if self.apartment:
-                return f'{href} @{self.username} секция {self.section} этаж {self.floor or "?"} кв. {self.apartment} id {self.user_id}'
+                return f'{href} @{self.username} дом {self.house} сек. {self.section or "?"} эт. {self.floor or "?"} кв. {self.apartment} id {self.user_id}'
             else:
-                return f'{href} @{self.username} секция {self.section} этаж {self.floor or "?"} id {self.user_id}'
+                return f'{href} @{self.username} дом {self.house} сек. {self.section or "?"} эт. {self.floor or "?"} id {self.user_id}'
         else:
             if self.apartment:
-                return f'{href} секция {self.section} этаж {self.floor or "?"} кв. {self.apartment} id {self.user_id}'
+                return f'{href} дом {self.house} сек. {self.section or "?"} эт. {self.floor or "?"} кв. {self.apartment} id {self.user_id}'
             else:
-                return f'{href} секция {self.section} этаж {self.floor or "?"} id {self.user_id}'
+                return f'{href} дом {self.house} сек. {self.section or "?"} эт. {self.floor or "?"} id {self.user_id}'
 
 
 class Show(Model):

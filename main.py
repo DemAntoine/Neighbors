@@ -4,7 +4,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryH
 import sys
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from models import User, Show
 from constants import help_msg, about_msg
 
@@ -58,16 +58,18 @@ def chosen_owns(update):
 
 def is_changed(update):
     # check if user exist in DB (both tables). If not - create
-    user, created = User.get_or_create(user_id=get_user_id(update))
+    user, created = User.get_or_create(user_id=get_user_id(update), username=get_username(update),
+                                       first_name=get_first_name(update), last_name=get_last_name(update))
     Show.get_or_create(user_id=get_user_id(update))
-    # check if user changed own username. If so - update
-    if user.username != get_username(update) or user.first_name != get_first_name(update) or user.last_name != get_last_name(update):
-        for user in User.select().where(User.user_id == get_user_id(update)):
-            user.username = get_username(update)
-            user.first_name = get_first_name(update)
-            user.last_name = get_last_name(update)
-            user.updated = datetime.now()
-            user.save()
+    if not created:
+        # check if user changed own username. If so - update
+        if user.username != get_username(update) or user.first_name != get_first_name(update) or user.last_name != get_last_name(update):
+            for user in User.select().where(User.user_id == get_user_id(update)):
+                user.username = get_username(update)
+                user.first_name = get_first_name(update)
+                user.last_name = get_last_name(update)
+                user.updated = datetime.now()
+                user.save()
 
 
 def start_command(bot, update):
@@ -95,22 +97,18 @@ def about_command(bot, update):
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'about_command'))
 
 
-def user_created_report(bot):
-    created_user = User.select().where(User.house > 0).order_by(User.created)[-1]
-    
-    if created_user.updated.second - created_user.created.second > 10:
-        text = 'В базе ОБНОВЛЕН пользователь:\n'
-    else:
-        text = 'В базе СОЗДАН пользователь:\n'
-    
+def user_created_report(bot, created_user, text):
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML,
                     text=f'{text}'
                     f'{created_user.user_created()}'
                     )
-    bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML,
-                    text=f'{text}'
-                    f'{created_user.user_created()}'
-                    )
+    try:
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML,
+                        text=f'{text}'
+                        f'{created_user.user_created()}'
+                        )
+    except:
+        pass
 
 
 def edit_or_show_kbd(bot, update):
@@ -251,7 +249,7 @@ def set_section_kbd(bot, update):
     """func show keyboard to chose its own section"""
     user = chosen_owns(update)
     user.house = int(update.callback_query.data[2])
-    user.updated = datetime.now()
+    # user.updated = datetime.now()
     user.save()
 
     keyboard = [[InlineKeyboardButton('Секція 1', callback_data='_s1'),
@@ -259,7 +257,8 @@ def set_section_kbd(bot, update):
                 [InlineKeyboardButton('Секція 3', callback_data='_s3'),
                  InlineKeyboardButton('Секція 4', callback_data='_s4')],
                 [InlineKeyboardButton('Секція 5', callback_data='_s5'),
-                 InlineKeyboardButton('Секція 6', callback_data='_s6')]]
+                 InlineKeyboardButton('Секція 6', callback_data='_s6')],
+                [InlineKeyboardButton('Завершити редагування', callback_data='_section_reject')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('В якій Ви секції ? 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
@@ -268,10 +267,9 @@ def set_section_kbd(bot, update):
 
 def set_floor_kbd(bot, update):
     """func show keyboard to chose its own floor"""
-    # user = User.get(user_id=get_user_id(update))
     user = chosen_owns(update)
     user.section = int(update.callback_query.data[2])
-    user.updated = datetime.now()
+    # user.updated = datetime.now()
     user.save()
 
     keyboard = []
@@ -282,6 +280,7 @@ def set_floor_kbd(bot, update):
             floors.append(InlineKeyboardButton(str(floor), callback_data='_f' + str(floor)))
             floor += 1
         keyboard.append(floors)
+    keyboard.append([InlineKeyboardButton('Завершити редагування', callback_data='_floor_reject')])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
@@ -296,7 +295,7 @@ def set_apartment_kbd(bot, update):
 
     user = chosen_owns(update)
     user.floor = floor
-    user.updated = datetime.now()
+    # user.updated = datetime.now()
     user.save()
 
     user_mode = Show.get(user_id=get_user_id(update))
@@ -345,22 +344,30 @@ def apartment_save(bot, update):
 
 
 def save_user_data(bot, update):
-    update.callback_query.answer()
-    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
-                    text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
-
-    user_mode = Show.get(user_id=get_user_id(update))
-    user_mode.msg_apart_mode = False
-    user_mode.save()
-
     user = chosen_owns(update)
-    user.apartment = None
+    if not user.updated:
+        text = 'В базе создан пользователь:\n'
+    else:
+        text = 'В базе ОБНОВЛЕН пользователь:\n'
+
+    if update.callback_query.data == '_apart_reject':
+        user_mode = Show.get(user_id=get_user_id(update))
+        user_mode.msg_apart_mode = False
+        user_mode.save()
+
+        user.apartment = None
+
     user.updated = datetime.now()
     user.save()
 
-    user_created_report(bot)
+    update.callback_query.answer()
+    user_created_report(bot, created_user=user, text=text)
+
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
+                    text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
 
     start_command(bot, update)
+
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_user_data'))
 
 
@@ -426,16 +433,14 @@ def main():
     dispatcher.add_handler(MessageHandler(Filters.text, apartment_save))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
-    # dispatcher.add_handler(CallbackQueryHandler(callback=show_section, pattern='^section_neighbors$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^p_h'))
     dispatcher.add_handler(CallbackQueryHandler(callback=save_params, pattern='^p_s'))
-    # dispatcher.add_handler(CallbackQueryHandler(callback=set_houses_kbd, pattern='^edit$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=check_owns, pattern='^edit$|^house_neighbors$|section_neighbors'))
     dispatcher.add_handler(CallbackQueryHandler(callback=owns_selected, pattern='^set_owns'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_section_kbd, pattern='^_h'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$|^_floor_reject$|^_section_reject$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_apartment_kbd, pattern='^_f'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$'))
 
     updater.start_polling()
     updater.idle()
