@@ -76,6 +76,11 @@ def is_changed(update):
                 if user.updated:
                     user.updated = datetime.now()
                 user.save()
+    else:
+        user.username = get_username(update)
+        user.first_name = get_first_name(update)
+        user.last_name = get_last_name(update)
+        user.save()
 
 
 def start_command(bot, update):
