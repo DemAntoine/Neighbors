@@ -4,7 +4,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryH
 import sys
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg
 
@@ -59,22 +59,16 @@ def chosen_owns(update):
 def is_changed(update):
     # check if user exist in DB (both tables). If not - create
     user, created = User.get_or_create(user_id=get_user_id(update))
-    
+
     # user, created = User.get_or_create(user_id=get_user_id(update), username=get_username(update),
     #                               first_name=get_first_name(update), last_name=get_last_name(update))
-    
-    
+
     Show.get_or_create(user_id=get_user_id(update))
     if not created:
-        # print(created)
-        # print('user:', user)
-        # print(user.username, get_username(update))
-        # print(user.first_name, get_first_name(update))
-        # print(user.last_name, get_last_name(update))
-        
-        # check if user changed own username. If so - update
-        if user.username != get_username(update) or user.first_name != get_first_name(update) or user.last_name != get_last_name(update):
-            # print('1')
+
+        # check if user changed own name attributes. If so - update
+        if user.username != get_username(update) or user.first_name != get_first_name(
+                update) or user.last_name != get_last_name(update):
             for user in User.select().where(User.user_id == get_user_id(update)):
                 user.username = get_username(update)
                 user.first_name = get_first_name(update)
@@ -82,11 +76,12 @@ def is_changed(update):
                 if user.updated:
                     user.updated = datetime.now()
                 user.save()
-                # print('2')
 
 
 def start_command(bot, update):
     is_changed(update)
+    if update.callback_query:
+        update.callback_query.answer()
     # logging
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'start_command'))
 
@@ -95,17 +90,19 @@ def start_command(bot, update):
 
 def help_command(bot, update):
     is_changed(update)
-
-    bot.sendMessage(chat_id=get_user_id(update), text=help_msg, parse_mode=ParseMode.HTML)
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    bot.sendMessage(chat_id=get_user_id(update), text=help_msg, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
     # logging
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'help_command'))
 
 
 def about_command(bot, update):
     is_changed(update)
-
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=get_user_id(update), text=about_msg,
-                    parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+                    parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
     # logging
     logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'about_command'))
 
@@ -116,8 +113,8 @@ def user_created_report(bot, created_user, text):
                     )
     try:
         bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML,
-                    text=f'{text} {created_user.user_created()}'
-                    )
+                        text=f'{text} {created_user.user_created()}'
+                        )
     except:
         pass
 
@@ -157,6 +154,7 @@ def check_owns(bot, update):
         set_houses_kbd(bot, update, text)
     else:
         select_owns(bot, update)
+    logging.info('user_id: %d command: %s' % (get_user_id(update), 'check_owns'))
 
 
 def select_owns(bot, update):
@@ -176,6 +174,7 @@ def select_owns(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     update.callback_query.answer()
+    logging.info('user_id: %d command: %s' % (get_user_id(update), 'select_owns'))
 
 
 def owns_selected(bot, update):
@@ -195,6 +194,7 @@ def owns_selected(bot, update):
         user = User.select().where(User.user_id == get_user_id(update))[owns]
         text = 'Змінюємо Ваші дані:\n' + user.setting_str() + '\nВ якому Ви будинку ? 🏠 :'
         set_houses_kbd(bot, update, text)
+    logging.info('user_id: %d command: %s' % (get_user_id(update), 'owns_selected'))
 
 
 def houses_kbd(bot, update):
@@ -235,6 +235,7 @@ def save_params(bot, update):
     update.callback_query.answer()
     some_section = True
     show_section(bot, update, some_section)
+    logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_params'))
 
 
 def set_houses_kbd(bot, update, text=''):
@@ -260,7 +261,6 @@ def set_section_kbd(bot, update):
     """func show keyboard to chose its own section"""
     user = chosen_owns(update)
     user.house = int(update.callback_query.data[2])
-    # user.updated = datetime.now()
     user.save()
 
     keyboard = [[InlineKeyboardButton('Секція 1', callback_data='_s1'),
@@ -280,7 +280,6 @@ def set_floor_kbd(bot, update):
     """func show keyboard to chose its own floor"""
     user = chosen_owns(update)
     user.section = int(update.callback_query.data[2])
-    # user.updated = datetime.now()
     user.save()
 
     keyboard = []
@@ -306,7 +305,6 @@ def set_apartment_kbd(bot, update):
 
     user = chosen_owns(update)
     user.floor = floor
-    # user.updated = datetime.now()
     user.save()
 
     user_mode = Show.get(user_id=get_user_id(update))
@@ -331,12 +329,12 @@ def apartment_save(bot, update):
             apartment = int(update.message.text)
             user = chosen_owns(update)
             user.apartment = apartment
-            
+
             if not user.updated:
                 text = 'В базе СОЗДАН пользователь:\n'
             else:
                 text = 'В базе ОБНОВЛЕН пользователь:\n'
-            
+
             user.updated = datetime.now()
             user.save()
             bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
@@ -344,8 +342,8 @@ def apartment_save(bot, update):
             user_mode.msg_apart_mode = False
             user_mode.save()
 
+            logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
             user_created_report(bot, created_user=user, text=text)
-
             start_command(bot, update)
         except ValueError:
             keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
@@ -383,9 +381,8 @@ def save_user_data(bot, update):
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
 
-    start_command(bot, update)
-
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_user_data'))
+    start_command(bot, update)
 
 
 def show_house(bot, update):
@@ -398,26 +395,14 @@ def show_house(bot, update):
 
     neighbors = []
     sections = User.select(User.section).where(User.house == user_query.house).distinct().order_by(User.section)
-    
+
     for i in sections:
         neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
         for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
             neighbors.append(str(user) + '\n')
-    
+
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
-    
-    # bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list)
-
-
-    # neighbors = []
-    # for i in range(1, 7):
-    #     neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i) + '</b>' + '\n')
-    #     for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
-    #         neighbors.append(str(user) + '\n')
-
-    # show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
-    #              + '{}' * len(neighbors)).format(*neighbors)
 
     # if len(show_list) < 2500:
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list)
@@ -461,14 +446,17 @@ def main():
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
     dispatcher.add_handler(MessageHandler(Filters.text, apartment_save))
+    dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^p_h'))
     dispatcher.add_handler(CallbackQueryHandler(callback=save_params, pattern='^p_s'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=check_owns, pattern='^edit$|^house_neighbors$|section_neighbors'))
+    dispatcher.add_handler(
+        CallbackQueryHandler(callback=check_owns, pattern='^edit$|^house_neighbors$|section_neighbors'))
     dispatcher.add_handler(CallbackQueryHandler(callback=owns_selected, pattern='^set_owns'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_section_kbd, pattern='^_h'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$|^_floor_reject$|^_section_reject$'))
+    dispatcher.add_handler(
+        CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$|^_floor_reject$|^_section_reject$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_apartment_kbd, pattern='^_f'))
 
