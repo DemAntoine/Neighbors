@@ -58,18 +58,31 @@ def chosen_owns(update):
 
 def is_changed(update):
     # check if user exist in DB (both tables). If not - create
-    user, created = User.get_or_create(user_id=get_user_id(update), username=get_username(update),
-                                       first_name=get_first_name(update), last_name=get_last_name(update))
+    user, created = User.get_or_create(user_id=get_user_id(update))
+    
+    # user, created = User.get_or_create(user_id=get_user_id(update), username=get_username(update),
+    #                               first_name=get_first_name(update), last_name=get_last_name(update))
+    
+    
     Show.get_or_create(user_id=get_user_id(update))
     if not created:
+        # print(created)
+        # print('user:', user)
+        # print(user.username, get_username(update))
+        # print(user.first_name, get_first_name(update))
+        # print(user.last_name, get_last_name(update))
+        
         # check if user changed own username. If so - update
         if user.username != get_username(update) or user.first_name != get_first_name(update) or user.last_name != get_last_name(update):
+            # print('1')
             for user in User.select().where(User.user_id == get_user_id(update)):
                 user.username = get_username(update)
                 user.first_name = get_first_name(update)
                 user.last_name = get_last_name(update)
-                user.updated = datetime.now()
+                if user.updated:
+                    user.updated = datetime.now()
                 user.save()
+                # print('2')
 
 
 def start_command(bot, update):
@@ -99,14 +112,12 @@ def about_command(bot, update):
 
 def user_created_report(bot, created_user, text):
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML,
-                    text=f'{text}'
-                    f'{created_user.user_created()}'
+                    text=f'{text} {created_user.user_created()}'
                     )
     try:
         bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML,
-                        text=f'{text}'
-                        f'{created_user.user_created()}'
-                        )
+                    text=f'{text} {created_user.user_created()}'
+                    )
     except:
         pass
 
@@ -320,6 +331,12 @@ def apartment_save(bot, update):
             apartment = int(update.message.text)
             user = chosen_owns(update)
             user.apartment = apartment
+            
+            if not user.updated:
+                text = 'В базе СОЗДАН пользователь:\n'
+            else:
+                text = 'В базе ОБНОВЛЕН пользователь:\n'
+            
             user.updated = datetime.now()
             user.save()
             bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
@@ -327,7 +344,7 @@ def apartment_save(bot, update):
             user_mode.msg_apart_mode = False
             user_mode.save()
 
-            user_created_report(bot)
+            user_created_report(bot, created_user=user, text=text)
 
             start_command(bot, update)
         except ValueError:
@@ -346,7 +363,7 @@ def apartment_save(bot, update):
 def save_user_data(bot, update):
     user = chosen_owns(update)
     if not user.updated:
-        text = 'В базе создан пользователь:\n'
+        text = 'В базе СОЗДАН пользователь:\n'
     else:
         text = 'В базе ОБНОВЛЕН пользователь:\n'
 
@@ -380,14 +397,27 @@ def show_house(bot, update):
         user_query = chosen_owns(update)
 
     neighbors = []
-
-    for i in range(1, 7):
-        neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i) + '</b>' + '\n')
-        for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
+    sections = User.select(User.section).where(User.house == user_query.house).distinct().order_by(User.section)
+    
+    for i in sections:
+        neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
+        for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
             neighbors.append(str(user) + '\n')
-
+    
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
+    
+    # bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list)
+
+
+    # neighbors = []
+    # for i in range(1, 7):
+    #     neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i) + '</b>' + '\n')
+    #     for user in User.select().where(User.house == user_query.house, User.section == i).order_by(User.floor):
+    #         neighbors.append(str(user) + '\n')
+
+    # show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
+    #              + '{}' * len(neighbors)).format(*neighbors)
 
     # if len(show_list) < 2500:
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list)
