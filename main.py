@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ParseMode, KeyboardButton
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 import sys
 import os
@@ -60,12 +60,8 @@ def is_changed(update):
     # check if user exist in DB (both tables). If not - create
     user, created = User.get_or_create(user_id=get_user_id(update))
 
-    # user, created = User.get_or_create(user_id=get_user_id(update), username=get_username(update),
-    #                               first_name=get_first_name(update), last_name=get_last_name(update))
-
     Show.get_or_create(user_id=get_user_id(update))
     if not created:
-
         # check if user changed own name attributes. If so - update
         if user.username != get_username(update) or user.first_name != get_first_name(
                 update) or user.last_name != get_last_name(update):
@@ -113,13 +109,10 @@ def about_command(bot, update):
 
 
 def user_created_report(bot, created_user, text):
-    bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML,
-                    text=f'{text} {created_user.user_created()}'
-                    )
+    """send report-message for admin"""
+    bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
     try:
-        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML,
-                        text=f'{text} {created_user.user_created()}'
-                        )
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
     except:
         pass
 
@@ -141,22 +134,21 @@ def edit_or_show_kbd(bot, update):
 
 
 def check_owns(bot, update):
-    if update.callback_query.data == 'house_neighbors':
-        if not len(User.select().where(User.user_id == get_user_id(update))) > 1:
+    if not len(User.select().where(User.user_id == get_user_id(update))) > 1:
+        if update.callback_query.data == 'house_neighbors':
             show_house(bot, update)
             return
-    elif update.callback_query.data == 'section_neighbors':
-        if not len(User.select().where(User.user_id == get_user_id(update))) > 1:
+        elif update.callback_query.data == 'section_neighbors':
             show_section(bot, update)
             return
-
-    if not User.get(user_id=get_user_id(update)).house:
-        text = 'В якому Ви будинку ? 🏠 :'
-        set_houses_kbd(bot, update, text)
-    elif not len(User.select().where(User.user_id == get_user_id(update))) > 1:
-        text = 'Змінюємо Ваші дані:\n' + User.get(
-            user_id=get_user_id(update)).setting_str() + '\nВ якому Ви будинку ? 🏠 :'
-        set_houses_kbd(bot, update, text)
+        else:
+            if not User.get(user_id=get_user_id(update)).house:
+                text = 'В якому Ви будинку ? 🏠 :'
+                set_houses_kbd(bot, update, text)
+            else:
+                text = 'Змінюємо Ваші дані:\n' + User.get(
+                    user_id=get_user_id(update)).setting_str() + '\nВ якому Ви будинку ? 🏠 :'
+                set_houses_kbd(bot, update, text)
     else:
         select_owns(bot, update)
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'check_owns'))
