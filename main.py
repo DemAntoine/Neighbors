@@ -74,7 +74,7 @@ def is_changed(update):
                 user.first_name = get_first_name(update)
                 user.last_name = get_last_name(update)
                 if user.updated:
-                    user.updated = datetime.now()
+                    user.updated = datetime.now().strftime('%y:%m:%d %H:%M:%S.%f')[:-4]
                 user.save()
     else:
         user.username = get_username(update)
@@ -340,7 +340,7 @@ def apartment_save(bot, update):
             else:
                 text = 'В базе ОБНОВЛЕН пользователь:\n'
 
-            user.updated = datetime.now()
+            user.updated = datetime.now().strftime('%y:%m:%d %H:%M:%S.%f')[:-4]
             user.save()
             bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
             logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
@@ -377,7 +377,7 @@ def save_user_data(bot, update):
 
         user.apartment = None
 
-    user.updated = datetime.now()
+    user.updated = datetime.now().strftime('%y:%m:%d %H:%M:%S.%f')[:-4]
     user.save()
 
     update.callback_query.answer()

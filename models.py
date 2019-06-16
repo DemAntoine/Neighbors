@@ -19,7 +19,7 @@ class User(Model):
     floor = IntegerField(null=True)
     apartment = IntegerField(null=True)
 
-    created = DateTimeField(default=peewee_datetime.datetime.now)
+    created = DateTimeField(default=peewee_datetime.datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4])
     updated = DateTimeField(default=None, null=True)
 
     def __str__(self):
