@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
+from telegram.error import BadRequest
 import sys
 import os
 import logging
@@ -229,7 +230,16 @@ def save_params(bot, update):
     user_query = Show.get(user_id=get_user_id(update))
     user_query.section = int(update.callback_query.data[3])
     user_query.save()
-    update.callback_query.answer()
+    # here occurs BadRequest error some times. try to catch and understand why is occurs
+    try:
+        update.callback_query.answer()
+    except BadRequest:
+        bot.sendPhoto(chat_id=get_user_id(update), photo=open(os.path.join('img', 'error.jpg'), 'rb'),
+                      caption=f'Щось пішло не так... Спробуйте ще раз.')
+        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'BadRequest occured')
+        start_command(bot, update)
+        return
+
     some_section = True
     show_section(bot, update, some_section)
     logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_params'))
