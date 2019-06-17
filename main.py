@@ -225,13 +225,16 @@ def section_kbd(bot, update):
     # here occurs BadRequest error some times. try to catch and understand why is occurs
     try:
         update.callback_query.answer()
-    except BadRequest:
+        logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd ===>>> NORM'))
+    except:
         bot.sendPhoto(chat_id=get_user_id(update), photo=open(os.path.join('img', 'error.jpg'), 'rb'),
                       caption=f'Щось пішло не так... Спробуйте ще раз.')
         bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'BadRequest occured')
         start_command(bot, update)
-        return
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd'))
+        logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd ===>>> FAIL'))
+        raise
+        # return
+    # logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd'))
 
 
 def save_params(bot, update):
