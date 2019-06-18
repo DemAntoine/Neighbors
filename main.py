@@ -415,6 +415,10 @@ def save_user_data(bot, update):
 
 def show_house(bot, update):
     logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_house IN'))
+    
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
     if update.callback_query.data == 'show_this_house':
         # if user want see selected house
         user_query = Show.get(user_id=get_user_id(update))
@@ -434,7 +438,7 @@ def show_house(bot, update):
                  + '{}' * len(neighbors)).format(*neighbors)
 
     # if len(show_list) < 2500:
-    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list)
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=show_list, reply_markup=reply_markup)
     # else:
     #     part_1, part_2, part_3 = show_list.partition('<pre>       📭 Секція 4</pre>\n')
     #     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=part_1[:-2])
@@ -442,11 +446,15 @@ def show_house(bot, update):
 
     update.callback_query.answer()
     logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_house OUT'))
-    start_command(bot, update)
+    # start_command(bot, update)
 
 
 def show_section(bot, update, some_section=False):
     logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_section IN'))
+    
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
     if not some_section:
         user_query = chosen_owns(update)
     else:
@@ -461,11 +469,11 @@ def show_section(bot, update, some_section=False):
                  + '{}' * len(neighbors)).format(*neighbors)
 
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
-                    disable_web_page_preview=True, text=show_list)
+                    disable_web_page_preview=True, text=show_list, reply_markup=reply_markup)
     update.callback_query.answer()
 
     logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_section OUT'))
-    start_command(bot, update)
+    # start_command(bot, update)
 
 
 def main():
