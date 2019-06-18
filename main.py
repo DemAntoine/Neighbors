@@ -8,13 +8,14 @@ import logging
 from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg
+from classes import filt_call_err
 
 KEY = sys.argv[1]
 print('key ' + KEY[:8] + '... successfully used')
 
 logging.basicConfig(
-    filename="logfile.log", level=logging.INFO, datefmt='%y-%m-%d %H:%M:%S',
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    filename="logfile.log", level=logging.INFO, datefmt='%y.%m.%d %H:%M:%S',
+    format='%(asctime)s %(levelname)s - %(message)s')
 
 
 def get_user_id(update):
@@ -113,7 +114,7 @@ def about_command(bot, update):
     logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'about_command OUT'))
 
 
-def user_created_report(bot, created_user, text):
+def user_created_report(bot, update, created_user, text):
     """send report-message for admin"""
     logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'user_created_report IN'))
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
@@ -404,7 +405,7 @@ def save_user_data(bot, update):
     user.save()
 
     update.callback_query.answer()
-    user_created_report(bot, created_user=user, text=text)
+    user_created_report(bot, update, created_user=user, text=text)
 
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
@@ -446,7 +447,6 @@ def show_house(bot, update):
 
     update.callback_query.answer()
     logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_house OUT'))
-    # start_command(bot, update)
 
 
 def show_section(bot, update, some_section=False):
@@ -473,7 +473,16 @@ def show_section(bot, update, some_section=False):
     update.callback_query.answer()
 
     logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_section OUT'))
-    # start_command(bot, update)
+
+
+# def call_err(bot, update):
+#     """temporary for testing errors"""
+#     bot.sendMessage(chat_id=get_user_id(update), text='called err')
+#     raise BadRequest('bad request')
+
+
+def catch_err(bot, update, error):
+    bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}\n user_id {get_user_id(update)}')
 
 
 def main():
@@ -483,6 +492,9 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
+
+    # dispatcher.add_handler(MessageHandler(filt_call_err, call_err))
+
     dispatcher.add_handler(MessageHandler(Filters.text, apartment_save))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
@@ -497,6 +509,8 @@ def main():
         CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$|^_floor_reject$|^_section_reject$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_apartment_kbd, pattern='^_f'))
+
+    dispatcher.add_error_handler(catch_err)
 
     updater.start_polling()
     updater.idle()
