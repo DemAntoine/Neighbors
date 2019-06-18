@@ -58,6 +58,7 @@ def chosen_owns(update):
 
 
 def is_changed(update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'is_changed IN'))
     # check if user exist in DB (both tables). If not - create
     user, created = User.get_or_create(user_id=get_user_id(update))
 
@@ -78,6 +79,7 @@ def is_changed(update):
         user.first_name = get_first_name(update)
         user.last_name = get_last_name(update)
         user.save()
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'is_changed OUT'))
 
 
 def start_command(bot, update):
@@ -85,41 +87,46 @@ def start_command(bot, update):
     if update.callback_query:
         update.callback_query.answer()
     # logging
-    logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'start_command'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'start_command'))
 
     edit_or_show_kbd(bot, update)
 
 
 def help_command(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'help_command IN'))
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=get_user_id(update), text=help_msg, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
     # logging
-    logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'help_command'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'help_command OUT'))
 
 
 def about_command(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'about_command IN'))
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=get_user_id(update), text=about_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
     # logging
-    logging.info('user_id: %d username: %s command: %s' % (get_user_id(update), get_username(update), 'about_command'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'about_command OUT'))
 
 
 def user_created_report(bot, created_user, text):
     """send report-message for admin"""
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'user_created_report IN'))
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
     try:
         bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
     except:
         pass
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'user_created_report OUT'))
 
 
 def edit_or_show_kbd(bot, update):
     """func show keyboard to chose: show neighbors or edit own info"""
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'edit_or_show_kbd IN'))
     if User.get(user_id=get_user_id(update)).house and User.get(user_id=get_user_id(update)).section:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
@@ -131,10 +138,11 @@ def edit_or_show_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=get_user_id(update), text='Меню:',
                     reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'edit_or_show_kbd'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'edit_or_show_kbd OUT'))
 
 
 def check_owns(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'check_owns IN'))
     if not len(User.select().where(User.user_id == get_user_id(update))) > 1:
         if update.callback_query.data == 'house_neighbors':
             show_house(bot, update)
@@ -152,10 +160,11 @@ def check_owns(bot, update):
                 set_houses_kbd(bot, update, text)
     else:
         select_owns(bot, update)
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'check_owns'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'check_owns OUT'))
 
 
 def select_owns(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'select_owns IN'))
     if update.callback_query.data == 'house_neighbors':
         text = 'Сусіди по якому будинку ? :'
         view_edit = 'view_my_house'
@@ -172,10 +181,11 @@ def select_owns(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     update.callback_query.answer()
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'select_owns'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'select_owns OUT'))
 
 
 def owns_selected(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'owns_selected IN'))
     view_edit = update.callback_query.data[-13:]
     owns = [s for s in list(update.callback_query.data) if s.isdigit()]
     owns = int(''.join(owns))
@@ -192,10 +202,11 @@ def owns_selected(bot, update):
         user = User.select().where(User.user_id == get_user_id(update))[owns]
         text = 'Змінюємо Ваші дані:\n' + user.setting_str() + '\nВ якому Ви будинку ? 🏠 :'
         set_houses_kbd(bot, update, text)
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'owns_selected'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'owns_selected OUT'))
 
 
 def houses_kbd(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'houses_kbd IN'))
     """func show keyboard to chose house to show"""
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='p_h1'),
                  InlineKeyboardButton('Будинок 2', callback_data='p_h2')],
@@ -204,10 +215,11 @@ def houses_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Який будинок показати ? 🏠 :', reply_markup=reply_markup)
     update.callback_query.answer()
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'houses_kbd'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'houses_kbd OUT'))
 
 
 def section_kbd(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'section_kbd IN'))
     """func show keyboard to chose section to show"""
     user_query = Show.get(user_id=get_user_id(update))
     user_query.house = int(update.callback_query.data[3])
@@ -225,30 +237,32 @@ def section_kbd(bot, update):
     # here occurs BadRequest error some times. try to catch and understand why is occurs
     try:
         update.callback_query.answer()
-        logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd ===>>> NORM'))
+        logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'section_kbd NORM OUT'))
     except:
         bot.sendPhoto(chat_id=get_user_id(update), photo=open(os.path.join('img', 'error.jpg'), 'rb'),
                       caption=f'Щось пішло не так... Спробуйте ще раз.')
         bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'BadRequest occured')
         start_command(bot, update)
-        logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd ===>>> FAIL'))
+        logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'section_kbd FAIL OUT'))
         raise
         # return
-    # logging.info('user_id: %d command: %s' % (get_user_id(update), 'section_kbd'))
+    # logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'section_kbd'))
 
 
 def save_params(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'save_params IN'))
     user_query = Show.get(user_id=get_user_id(update))
     user_query.section = int(update.callback_query.data[3])
     user_query.save()
     update.callback_query.answer()
     some_section = True
     show_section(bot, update, some_section)
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_params'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'save_params OUT'))
 
 
 def set_houses_kbd(bot, update, text=''):
     """func show keyboard to chose its own house"""
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'set_houses_kbd IN'))
     if not User.get(user_id=get_user_id(update)).house:
         text = text
     elif len(User.select().where(User.user_id == get_user_id(update))) > 1:
@@ -263,11 +277,12 @@ def set_houses_kbd(bot, update, text=''):
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
     update.callback_query.answer()
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_houses_kbd'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'set_houses_kbd OUT'))
 
 
 def set_section_kbd(bot, update):
     """func show keyboard to chose its own section"""
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'set_section_kbd IN'))
     user = chosen_owns(update)
     user.house = int(update.callback_query.data[2])
     user.save()
@@ -282,11 +297,12 @@ def set_section_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('В якій Ви секції ? 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_section_kbd'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'set_section_kbd OUT'))
 
 
 def set_floor_kbd(bot, update):
     """func show keyboard to chose its own floor"""
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'set_floor_kbd IN'))
     user = chosen_owns(update)
     user.section = int(update.callback_query.data[2])
     user.save()
@@ -304,10 +320,11 @@ def set_floor_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
     update.callback_query.answer()
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_floor_kbd'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'set_floor_kbd OUT'))
 
 
 def set_apartment_kbd(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'set_apartment_kbd IN'))
     """func show message with ask to tell its own appartment"""
     floor = [s for s in list(update.callback_query.data) if s.isdigit()]
     floor = int(''.join(floor))
@@ -325,10 +342,11 @@ def set_apartment_kbd(bot, update):
     update.callback_query.message.reply_text('Напишіть в повідомленні номер квартири, або нажміть кнопку відмови:',
                                              reply_markup=reply_markup)
     update.callback_query.answer()
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'set_apartment_kbd'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'set_apartment_kbd OUT'))
 
 
 def apartment_save(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'apartment_save IN'))
     user_mode = Show.get(user_id=get_user_id(update))
     if user_mode.msg_apart_mode:
         text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
@@ -347,27 +365,28 @@ def apartment_save(bot, update):
             user.updated = datetime.now().strftime('%y:%m:%d %H:%M:%S.%f')[:-4]
             user.save()
             bot.sendMessage(text=text_success, chat_id=get_user_id(update), parse_mode=ParseMode.HTML)
-            logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
+            logging.info('user_id: %d cmd: %s msg: %s' % (get_user_id(update), 'apartment_save OK', update.message.text))
             user_mode.msg_apart_mode = False
             user_mode.save()
 
-            logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
+            # logging.info('user_id: %d cmd: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
             user_created_report(bot, created_user=user, text=text)
             start_command(bot, update)
         except ValueError:
             keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             update.message.reply_text(text=text_failed, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-            logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
+            logging.info('user_id: %d cmd: %s msg: %s' % (get_user_id(update), 'apartment_save ValueError', update.message.text))
     else:
         bot.sendPhoto(chat_id=get_user_id(update), photo=open(os.path.join('img', 'maybe.jpg'), 'rb'),
                       caption=f'Я ще не розумію людської мови, але вже вчусь, і скоро буду розуміть деякі слова і фрази'
                       f'Краще скористайтесь однією з кнопок')
-        logging.info('user_id: %d command: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
+        logging.info('user_id: %d cmd: %s msg: %s' % (get_user_id(update), 'apartment_save DONT understand', update.message.text))
         start_command(bot, update)
 
 
 def save_user_data(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'save_user_data IN'))
     user = chosen_owns(update)
     if not user.updated:
         text = 'В базе СОЗДАН пользователь:\n'
@@ -390,11 +409,12 @@ def save_user_data(bot, update):
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
 
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'save_user_data'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'save_user_data OUT'))
     start_command(bot, update)
 
 
 def show_house(bot, update):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_house IN'))
     if update.callback_query.data == 'show_this_house':
         # if user want see selected house
         user_query = Show.get(user_id=get_user_id(update))
@@ -421,11 +441,12 @@ def show_house(bot, update):
     #     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text=part_2 + part_3)
 
     update.callback_query.answer()
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'show_this_house'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_house OUT'))
     start_command(bot, update)
 
 
 def show_section(bot, update, some_section=False):
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_section IN'))
     if not some_section:
         user_query = chosen_owns(update)
     else:
@@ -443,7 +464,7 @@ def show_section(bot, update, some_section=False):
                     disable_web_page_preview=True, text=show_list)
     update.callback_query.answer()
 
-    logging.info('user_id: %d command: %s' % (get_user_id(update), 'show_section'))
+    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'show_section OUT'))
     start_command(bot, update)
 
 
