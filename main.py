@@ -9,13 +9,14 @@ from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg
 from classes import filt_call_err
+from config import log
 
 KEY = sys.argv[1]
 print('key ' + KEY[:8] + '... successfully used')
 
 logging.basicConfig(
     filename="logfile.log", level=logging.INFO, datefmt='%y.%m.%d %H:%M:%S',
-    format='%(asctime)s %(levelname)s - %(message)s')
+    format='%(asctime)s - %(message)s')
 
 
 def get_user_id(update):
@@ -59,7 +60,7 @@ def chosen_owns(update):
 
 
 def is_changed(update):
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'is_changed IN'))
+    log.info(f'user_id: {get_user_id(update)} cmd: is_changed IN')
     # check if user exist in DB (both tables). If not - create
     user, created = User.get_or_create(user_id=get_user_id(update))
 
@@ -80,49 +81,47 @@ def is_changed(update):
         user.first_name = get_first_name(update)
         user.last_name = get_last_name(update)
         user.save()
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'is_changed OUT'))
+    log.info(f'user_id: {get_user_id(update)} cmd: is_changed OUT')
 
 
 def start_command(bot, update):
+    log.info(f'user_id: {get_user_id(update)} cmd: start_command IN')
     is_changed(update)
     if update.callback_query:
         update.callback_query.answer()
-    # logging
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'start_command'))
+    log.info(f'user_id: {get_user_id(update)} cmd: start_command OUT')
 
     edit_or_show_kbd(bot, update)
 
 
 def help_command(bot, update):
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'help_command IN'))
+    log.info(f'user_id: {get_user_id(update)} cmd: help_command IN')
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=get_user_id(update), text=help_msg, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
-    # logging
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'help_command OUT'))
+    log.info(f'user_id: {get_user_id(update)} cmd: help_command OUT')
 
 
 def about_command(bot, update):
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'about_command IN'))
+    log.info(f'user_id: {get_user_id(update)} cmd: about_command IN')
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=get_user_id(update), text=about_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
-    # logging
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'about_command OUT'))
+    log.info(f'user_id: {get_user_id(update)} cmd: about_command OUT')
 
 
 def user_created_report(bot, update, created_user, text):
     """send report-message for admin"""
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'user_created_report IN'))
+    log.info(f'user_id: {get_user_id(update)} cmd: user_created_report IN')
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
     try:
         bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
     except:
         pass
-    logging.info('user_id: %d cmd: %s' % (get_user_id(update), 'user_created_report OUT'))
+    log.info(f'user_id: {get_user_id(update)} cmd: user_created_report OUT')
 
 
 def edit_or_show_kbd(bot, update):
@@ -371,7 +370,7 @@ def apartment_save(bot, update):
             user_mode.save()
 
             # logging.info('user_id: %d cmd: %s msg: %s' % (get_user_id(update), 'apart_save', update.message.text))
-            user_created_report(bot, created_user=user, text=text)
+            user_created_report(bot, update, created_user=user, text=text)
             start_command(bot, update)
         except ValueError:
             keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]

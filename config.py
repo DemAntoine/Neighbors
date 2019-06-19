@@ -10,19 +10,6 @@ LOGGER_CONFIG = {
     'formatter': logging.Formatter('{asctime} {message}', '%Y.%m.%d %H:%M:%S', style='{')
 }
 
-log = logging.getLogger()
-fh = logging.FileHandler(LOGGER_CONFIG['file'])
-fh.setLevel(LOGGER_CONFIG['level'])
-fh.setFormatter(LOGGER_CONFIG['formatter'])
-log.addHandler(fh)
-log.setLevel(LOGGER_CONFIG['level'])
-
-logging.Formatter.converter = time.localtime
-log.error("localtime")
-
-logging.Formatter.converter = time.gmtime
-log.error("gmtime")
-
 
 def customTime(*args):
     utc_dt = utc.localize(datetime.utcnow())
@@ -31,5 +18,15 @@ def customTime(*args):
     return converted.timetuple()
 
 
+log = logging.getLogger()
+# set custom timezone for logging
 logging.Formatter.converter = customTime
-log.error("customTime")
+fh = logging.FileHandler(LOGGER_CONFIG['file'])
+fh.setLevel(LOGGER_CONFIG['level'])
+fh.setFormatter(LOGGER_CONFIG['formatter'])
+log.addHandler(fh)
+log.setLevel(LOGGER_CONFIG['level'])
+
+
+
+
