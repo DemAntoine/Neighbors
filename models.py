@@ -23,40 +23,52 @@ class User(Model):
     updated = DateTimeField(default=None, null=True)
 
     def __str__(self):
-        """ inline mention of a user. seems like works only after user write to bot first
+        """ inline mention of a user. works only after user write to bot first
             <a href="tg://user?id=3680016">inline mention of a user</a>"""
             
         href = f'🔹<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
+        floor = str(self.floor)[0:2] + '-' + str(self.floor)[2:4] if ((self.floor or 1) > 99) else self.floor
+
         if self.username:
             if self.apartment:
-                return f'{href} @{self.username}     {self.floor or "?"} пов. {self.apartment} 🚪'
+                # return f'{href} @{self.username}     {self.floor or "?"} пов. {self.apartment} 🚪'
+                return f'{href} @{self.username}     {floor or "?"} пов. {self.apartment} 🚪'
             else:
-                return f'{href} @{self.username}     {self.floor or "?"} пов.'
+                # return f'{href} @{self.username}     {self.floor or "?"} пов.'
+                return f'{href} @{self.username}     {floor or "?"} пов.'
         else:
             if self.apartment:
-                return f'{href}    {self.floor or "?"} пов. {self.apartment} 🚪'
+                # return f'{href}    {self.floor or "?"} пов. {self.apartment} 🚪'
+                return f'{href}    {floor or "?"} пов. {self.apartment} 🚪'
             else:
-                return f'{href}    {self.floor or "?"} пов.'
+                # return f'{href}    {self.floor or "?"} пов.'
+                return f'{href}    {floor or "?"} пов.'
 
     def setting_str(self):
+        floor = str(self.floor)[0:2] + '-' + str(self.floor)[2:4] if ((self.floor or 1) > 99) else self.floor
+
         return f'Будинок <b>{self.house}</b> Секція <b>{self.section or "?"}</b> поверх ' \
-            f'<b>{self.floor or "?"}</b> кв. <b>{self.apartment or "?"}</b>'
+            f'<b>{floor or "?"}</b> кв. <b>{self.apartment or "?"}</b>'
 
     def edit_btn_str(self):
-        return f'Будинок {self.house} Секція {self.section or "?"} пов. {self.floor or "?"} кв. {self.apartment or "?"}'
+        floor = str(self.floor)[0:2] + '-' + str(self.floor)[2:4] if ((self.floor or 1) > 99) else self.floor
+
+        return f'Будинок {self.house} Секція {self.section or "?"} пов. {floor or "?"} кв. {self.apartment or "?"}'
 
     def user_created(self):
+        floor = str(self.floor)[0:2] + '-' + str(self.floor)[2:4] if ((self.floor or 1) > 99) else self.floor
+
         href = f'🔹<a href="tg://user?id={self.user_id}">{self.first_name} {self.last_name or ""}</a>'
         if self.username:
             if self.apartment:
-                return f'{href} @{self.username} дом {self.house} сек. {self.section or "?"} эт. {self.floor or "?"} кв. {self.apartment} id {self.user_id}'
+                return f'{href} @{self.username} дом {self.house} сек. {self.section or "?"} эт. {floor or "?"} кв. {self.apartment} id {self.user_id}'
             else:
-                return f'{href} @{self.username} дом {self.house} сек. {self.section or "?"} эт. {self.floor or "?"} id {self.user_id}'
+                return f'{href} @{self.username} дом {self.house} сек. {self.section or "?"} эт. {floor or "?"} id {self.user_id}'
         else:
             if self.apartment:
-                return f'{href} дом {self.house} сек. {self.section or "?"} эт. {self.floor or "?"} кв. {self.apartment} id {self.user_id}'
+                return f'{href} дом {self.house} сек. {self.section or "?"} эт. {floor or "?"} кв. {self.apartment} id {self.user_id}'
             else:
-                return f'{href} дом {self.house} сек. {self.section or "?"} эт. {self.floor or "?"} id {self.user_id}'
+                return f'{href} дом {self.house} сек. {self.section or "?"} эт. {floor or "?"} id {self.user_id}'
 
 
 class Show(Model):

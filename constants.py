@@ -67,9 +67,5 @@ houses_arr = {
     'house_1': house_1, 
     'house_2': house_2,
     'house_3': house_3, 
-    'house_4': house_4
+    'house_4': house_4,
 }
-
-# for i in houses:
-#     for j in i.values():
-#         print(j)

@@ -316,15 +316,29 @@ def set_floor_kbd(bot, update):
     user.section = int(update.callback_query.data[2])
     user.save()
 
+    # keyboard = []
+    # floor = 1
+    # for row in range(0, 5):
+    #     floors = []
+    #     for i in range(1, 6):
+    #         floors.append(InlineKeyboardButton(str(floor), callback_data='_f' + str(floor)))
+    #         floor += 1
+    #     keyboard.append(floors)
+    # keyboard.append([InlineKeyboardButton('Завершити редагування', callback_data='_floor_reject')])
+    #
+    # reply_markup = InlineKeyboardMarkup(keyboard)
+
+    floors = houses_arr['house_' + str(user.house)]['section_' + str(user.section)]
     keyboard = []
-    floor = 1
-    for row in range(0, 5):
-        floors = []
-        for i in range(1, 6):
-            floors.append(InlineKeyboardButton(str(floor), callback_data='_f' + str(floor)))
-            floor += 1
-        keyboard.append(floors)
-    keyboard.append([InlineKeyboardButton('Завершити редагування', callback_data='_floor_reject')])
+    count_ = len(floors)
+    while count_ > 0:
+        floor = []
+        for i in range(3):
+            if count_ == 0:
+                break
+            floor.append(InlineKeyboardButton(str(floors[-count_]), callback_data='_f' + str(floors[-count_])))
+            count_ -= 1
+        keyboard.append(floor)
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
@@ -346,10 +360,10 @@ def set_apartment_kbd(bot, update):
     user_mode.msg_apart_mode = True
     user_mode.save()
 
+    text = 'В якій ви квартирі? 🚪 \nНапишіть в повідомленні номер квартири, або нажміть кнопку відмови:'
     keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('Напишіть в повідомленні номер квартири, або нажміть кнопку відмови:',
-                                             reply_markup=reply_markup)
+    update.callback_query.message.reply_text(text=text, reply_markup=reply_markup)
     update.callback_query.answer()
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
 
@@ -512,6 +526,16 @@ def test_feature(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text='На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
+    # test_feature_2(bot, update)
+
+
+def test_feature_2(bot, update):
+    floor = [s for s in list(update.callback_query.data) if s.isdigit()]
+    floor = int(''.join(floor))
+
+    user = chosen_owns(update)
+    user.floor = floor
+    user.save()
 
 
 def main():
