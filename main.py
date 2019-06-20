@@ -233,6 +233,11 @@ def section_kbd(bot, update):
                 [InlineKeyboardButton('Секція 5', callback_data='p_s5'),
                  InlineKeyboardButton('Секція 6', callback_data='p_s6')],
                 [InlineKeyboardButton('Показати всіх в цьому будинку 🏠', callback_data='show_this_house')]]
+                
+    # if selected house 3 or 4 so no 6 section there. delete it from keyboard
+    if user_query.house in [3, 4]:
+        del keyboard[-2][1]
+        
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Яку секцію показати ? 🔢 :', reply_markup=reply_markup)
     # here occurs BadRequest error some times. try to catch and understand why is occurs
@@ -293,6 +298,11 @@ def set_section_kbd(bot, update):
                 [InlineKeyboardButton('Секція 5', callback_data='_s5'),
                  InlineKeyboardButton('Секція 6', callback_data='_s6')],
                 [InlineKeyboardButton('Завершити редагування', callback_data='_section_reject')]]
+                
+    # if selected house 3 or 4 so no 6 section there. delete it from keyboard
+    if user.house in [3, 4]:
+        del keyboard[-2][1]
+        
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('В якій Ви секції ? 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()

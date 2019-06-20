@@ -29,10 +29,42 @@ about_msg = '''
 Проект на <a href="https://github.com/DemAntoine/Neighbors">GitHub</a>
 '''
 
-
-houses = {
-    1: {1: 25, 2: 18, 3: 18, 4: 18, 5: 18, 6: 18},
-    2: {1: 25, 2: 18, 3: 18, 4: 18, 5: 18, 6: 18},
-    3: {1: 25, 2: 18, 3: 18, 4: 18, 5: 18},
-    4: {1: 25, 2: 18, 3: 18, 4: 18, 5: 18},
+house_1 = {
+    'section_1': [i for i in range(1, 13)] + ['13-14'],
+    'section_2': [i for i in range(1, 15)] + ['15-16'],
+    'section_3': [i for i in range(1, 16)] + ['16-17'],
+    'section_4': [i for i in range(1, 15)] + ['15-16'],
+    'section_5': [i for i in range(1, 14)] + ['14-15'],
+    'section_6': [i for i in range(1, 12)] + ['12-13'],
 }
+
+house_2 = {
+    'section_1': [i for i in range(1, 14)] + ['14-15'],
+    'section_2': [i for i in range(1, 15)] + ['15-16'],
+    'section_3': [i for i in range(1, 16)] + ['16-17'],
+    'section_4': [i for i in range(1, 15)] + ['15-16'],
+    'section_5': [i for i in range(1, 13)] + ['13-14'],
+    'section_6': [i for i in range(1, 12)] + ['12-13'],
+}
+
+house_3 = {
+    'section_1': [i for i in range(1, 13)] + ['13-14'],
+    'section_2': [i for i in range(1, 15)] + ['15-16'],
+    'section_3': [i for i in range(1, 16)] + ['16-17'],
+    'section_4': [i for i in range(1, 15)] + ['15-16'],
+    'section_5': [i for i in range(1, 13)] + ['14-15'],
+}
+
+house_4 = {
+    'section_1': [i for i in range(1, 24)] + ['24-25'],
+    'section_2': [i for i in range(1, 16)] + ['16-17'],
+    'section_3': [i for i in range(1, 15)] + ['15-16'],
+    'section_4': [i for i in range(1, 14)] + ['14-15'],
+    'section_5': [i for i in range(1, 12)] + ['12-13'],
+}
+
+houses = [house_1, house_2, house_3, house_4]
+
+# for i in houses:
+#     for j in i.values():
+#         print(j)
