@@ -7,8 +7,8 @@ import os
 import logging
 from datetime import datetime
 from models import User, Show
-from constants import help_msg, about_msg
-from classes import filt_call_err
+from constants import help_msg, about_msg, houses_arr
+from classes import filt_call_err, filt_test_feature
 from config import log
 
 KEY = sys.argv[1]
@@ -494,6 +494,26 @@ def catch_err(bot, update, error):
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
 
 
+def test_feature(bot, update):
+    user = chosen_owns(update)
+    floors = houses_arr['house_' + str(user.house)]['section_' + str(user.section)]
+    
+    keyboard = []
+    count_ = len(floors)
+    while count_ > 0:
+        floor = []
+        for i in range(3):
+            if count_ == 0:
+                break
+            floor.append(InlineKeyboardButton(str(floors[-count_]), callback_data='_f' + str(floors[-count_])))
+            count_ -= 1
+        keyboard.append(floor)
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text='На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
+
+
 def main():
     updater = Updater(KEY)
 
@@ -503,6 +523,7 @@ def main():
     dispatcher.add_handler(CommandHandler("about", about_command))
 
     # dispatcher.add_handler(MessageHandler(filt_call_err, call_err))
+    dispatcher.add_handler(MessageHandler(filt_test_feature, test_feature))
 
     dispatcher.add_handler(MessageHandler(Filters.text, apartment_save))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))

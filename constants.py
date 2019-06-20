@@ -63,7 +63,12 @@ house_4 = {
     'section_5': [i for i in range(1, 12)] + ['12-13'],
 }
 
-houses = [house_1, house_2, house_3, house_4]
+houses_arr = {
+    'house_1': house_1, 
+    'house_2': house_2,
+    'house_3': house_3, 
+    'house_4': house_4
+}
 
 # for i in houses:
 #     for j in i.values():
