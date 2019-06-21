@@ -117,11 +117,11 @@ def user_created_report(bot, update, created_user, text):
     """send report-message for admin"""
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} IN')
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    try:
-        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    except:
-        pass
-    log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
+    # try:
+    #     bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    # except:
+    #     pass
+    # log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
 
 
 def edit_or_show_kbd(bot, update):
