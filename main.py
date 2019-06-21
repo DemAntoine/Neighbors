@@ -12,11 +12,7 @@ from classes import filt_call_err, filt_test_feature
 from config import log
 
 KEY = sys.argv[1]
-print('key ' + KEY[:8] + '... successfully used')
-
-# logging.basicConfig(
-#     filename="logfile.log", level=logging.INFO, datefmt='%y.%m.%d %H:%M:%S',
-#     format='%(asctime)s - %(message)s')
+print('key ...' + KEY[-6:] + ' successfully used')
 
 
 def get_user_id(update):
@@ -116,12 +112,11 @@ def about_command(bot, update):
 def user_created_report(bot, update, created_user, text):
     """send report-message for admin"""
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} IN')
+
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    # try:
-    #     bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    # except:
-    #     pass
-    # log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
+    bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+
+    log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
 
 
 def edit_or_show_kbd(bot, update):
@@ -240,17 +235,7 @@ def section_kbd(bot, update):
         
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Яку секцію показати ? 🔢 :', reply_markup=reply_markup)
-    # here occurs BadRequest error some times. try to catch and understand why is occurs
-    try:
-        update.callback_query.answer()
-        log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} NORM OUT')
-    except:
-        bot.sendPhoto(chat_id=get_user_id(update), photo=open(os.path.join('img', 'error.jpg'), 'rb'),
-                      caption=f'Щось пішло не так... Спробуйте ще раз.')
-        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'BadRequest occured')
-        start_command(bot, update)
-        log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} FAIL OUT')
-        raise
+    log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
 
 
 def save_params(bot, update):
@@ -403,7 +388,7 @@ def apartment_save(bot, update):
         bot.sendPhoto(chat_id=get_user_id(update), photo=open(os.path.join('img', 'maybe.jpg'), 'rb'),
                       caption=f'Я ще не розумію людської мови, але вже вчусь, і скоро буду розуміть деякі слова і фрази'
                       f'Краще скористайтесь однією з кнопок')
-        log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} DONT understand {update.message.text}')
+        log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} DONT undstnd {update.message.text}')
         start_command(bot, update)
 
 
@@ -505,6 +490,10 @@ def show_section(bot, update, some_section=False):
 def catch_err(bot, update, error):
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} IN')
     bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}\n user_id {get_user_id(update)}')
+
+    bot.sendPhoto(chat_id=get_user_id(update), photo=open(os.path.join('img', 'error.jpg'), 'rb'),
+                  caption=f'Щось пішло не так... Спробуйте ще раз.')
+
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
 
 
@@ -525,17 +514,8 @@ def test_feature(bot, update):
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text='На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
-    # test_feature_2(bot, update)
-
-
-def test_feature_2(bot, update):
-    floor = [s for s in list(update.callback_query.data) if s.isdigit()]
-    floor = int(''.join(floor))
-
-    user = chosen_owns(update)
-    user.floor = floor
-    user.save()
+    bot.sendMessage(chat_id=get_user_id(update), parse_mode=ParseMode.HTML, text='На якому Ви поверсі ? 🧗 :',
+                    reply_markup=reply_markup)
 
 
 def main():

@@ -30,21 +30,21 @@ about_msg = '''
 '''
 
 house_1 = {
-    'section_1': [i for i in range(1, 13)] + ['13-14'],
-    'section_2': [i for i in range(1, 15)] + ['15-16'],
+    'section_1': [i for i in range(1, 15)] + ['12-13', '13-14'],
+    'section_2': [i for i in range(1, 17)] + ['14-15', '15-16'],
     'section_3': [i for i in range(1, 16)] + ['16-17'],
     'section_4': [i for i in range(1, 15)] + ['15-16'],
-    'section_5': [i for i in range(1, 14)] + ['14-15'],
-    'section_6': [i for i in range(1, 12)] + ['12-13'],
+    'section_5': [i for i in range(1, 16)] + ['13-14', '14-15'],
+    'section_6': [i for i in range(1, 14)] + ['11-12', '12-13'],
 }
 
 house_2 = {
-    'section_1': [i for i in range(1, 14)] + ['14-15'],
-    'section_2': [i for i in range(1, 15)] + ['15-16'],
+    'section_1': [i for i in range(1, 16)] + ['12-13', '13-14', '14-15'],
+    'section_2': [i for i in range(1, 17)] + ['14-15', '15-16'],
     'section_3': [i for i in range(1, 16)] + ['16-17'],
     'section_4': [i for i in range(1, 15)] + ['15-16'],
     'section_5': [i for i in range(1, 13)] + ['13-14'],
-    'section_6': [i for i in range(1, 12)] + ['12-13'],
+    'section_6': [i for i in range(1, 14)] + ['11-12', '12-13'],
 }
 
 house_3 = {
