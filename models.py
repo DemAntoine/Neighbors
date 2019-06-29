@@ -52,7 +52,7 @@ class User(Model):
     def user_created(self):
         floor = str(self.floor)[0:2] + '-' + str(self.floor)[2:4] if ((self.floor or 1) > 99) else self.floor
         href = f'🔹<a href="tg://user?id={self.user_id}">{self.full_name}</a>'
-        username = ('@' + self.username) or ''
+        username = '@' + self.username if self.username else ''
         if self.apartment:
             return f'{href} {username} дом {self.house} сек. {self.section or "?"} эт. {floor or "?"} кв. {self.apartment} id {self.user_id}'
         else:

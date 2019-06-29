@@ -77,9 +77,11 @@ def about_command(bot, update):
 def user_created_report(bot, update, created_user, text):
     """send report-message for admin"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
-
-    bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    if created_user.user_id in [3680016, 848451586, 113471434]:
+        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    else:
+        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
 
 
 def edit_or_show_kbd(bot, update):
