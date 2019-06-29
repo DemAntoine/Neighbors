@@ -58,24 +58,25 @@ def chosen_owns(update):
 def is_changed(update):
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} IN')
     # check if user exist in DB (both tables). If not - create
-    user, created = User.get_or_create(user_id=get_user_id(update))
+    username = update.effective_user.username
+    user_id = update.effective_user.id
+    full_name = update.effective_user.full_name
+
+    user, created = User.get_or_create(user_id=user_id)
 
     Show.get_or_create(user_id=get_user_id(update))
     if not created:
         # check if user changed own name attributes. If so - update
-        if user.username != get_username(update) or user.first_name != get_first_name(
-                update) or user.last_name != get_last_name(update):
-            for user in User.select().where(User.user_id == get_user_id(update)):
-                user.username = get_username(update)
-                user.first_name = get_first_name(update)
-                user.last_name = get_last_name(update)
+        if user.username != username or user.full_name != full_name:
+            for user in User.select().where(User.user_id == user_id):
+                user.username = username
+                user.full_name = full_name
                 if user.updated:
                     user.updated = datetime.now().strftime('%y:%m:%d %H:%M:%S.%f')[:-4]
                 user.save()
     else:
         user.username = get_username(update)
-        user.first_name = get_first_name(update)
-        user.last_name = get_last_name(update)
+        user.full_name = full_name
         user.save()
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
 
@@ -114,7 +115,7 @@ def user_created_report(bot, update, created_user, text):
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} IN')
 
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    # bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
 
     log.info(f'user_id: {get_user_id(update)} username: {get_username(update)} OUT')
 
