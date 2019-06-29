@@ -46,7 +46,6 @@ def is_changed(update):
         user.username = update.effective_user.username
         user.full_name = full_name
         user.save()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def start_command(bot, update):
@@ -54,7 +53,6 @@ def start_command(bot, update):
     is_changed(update)
     if update.callback_query:
         update.callback_query.answer()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
     edit_or_show_kbd(bot, update)
 
@@ -65,7 +63,6 @@ def help_command(bot, update):
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text=help_msg, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def about_command(bot, update):
@@ -75,7 +72,6 @@ def about_command(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text=about_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def user_created_report(bot, update, created_user, text):
@@ -84,8 +80,6 @@ def user_created_report(bot, update, created_user, text):
 
     bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
     bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def edit_or_show_kbd(bot, update):
@@ -102,7 +96,6 @@ def edit_or_show_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text='Меню:',
                     reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def check_owns(bot, update):
@@ -122,9 +115,7 @@ def check_owns(bot, update):
                 text = 'Змінюємо Ваші дані:\n' + User.get(
                     user_id=update.effective_user.id).setting_str() + '\nВ якому Ви будинку ? 🏠 :'
                 set_houses_kbd(bot, update, text)
-        log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
     else:
-        log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
         select_owns(bot, update)
     
 
@@ -146,7 +137,6 @@ def select_owns(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     update.callback_query.answer()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def owns_selected(bot, update):
@@ -167,7 +157,6 @@ def owns_selected(bot, update):
         user = User.select().where(User.user_id == update.effective_user.id)[owns]
         text = 'Змінюємо Ваші дані:\n' + user.setting_str() + '\nВ якому Ви будинку ? 🏠 :'
         set_houses_kbd(bot, update, text)
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def houses_kbd(bot, update):
@@ -180,7 +169,6 @@ def houses_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Який будинок показати ? 🏠 :', reply_markup=reply_markup)
     update.callback_query.answer()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def section_kbd(bot, update):
@@ -204,7 +192,6 @@ def section_kbd(bot, update):
         
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Яку секцію показати ? 🔢 :', reply_markup=reply_markup)
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def save_params(bot, update):
@@ -215,7 +202,6 @@ def save_params(bot, update):
     update.callback_query.answer()
     some_section = True
     show_section(bot, update, some_section)
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def set_houses_kbd(bot, update, text=''):
@@ -235,7 +221,6 @@ def set_houses_kbd(bot, update, text=''):
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
     update.callback_query.answer()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def set_section_kbd(bot, update):
@@ -260,7 +245,6 @@ def set_section_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('В якій Ви секції ? 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def set_floor_kbd(bot, update):
@@ -285,7 +269,6 @@ def set_floor_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('На якому Ви поверсі ? 🧗 :', reply_markup=reply_markup)
     update.callback_query.answer()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def set_apartment_kbd(bot, update):
@@ -307,7 +290,6 @@ def set_apartment_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup)
     update.callback_query.answer()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def apartment_save(bot, update):
@@ -375,7 +357,6 @@ def save_user_data(bot, update):
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
 
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
     start_command(bot, update)
 
 
@@ -411,7 +392,6 @@ def show_house(bot, update):
     #     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=part_2 + part_3)
 
     update.callback_query.answer()
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def show_section(bot, update, some_section=False):
@@ -437,8 +417,6 @@ def show_section(bot, update, some_section=False):
                     disable_web_page_preview=True, text=show_list, reply_markup=reply_markup)
     update.callback_query.answer()
 
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
-
 
 # def call_err(bot, update):
 #     """temporary for testing errors"""
@@ -452,8 +430,6 @@ def catch_err(bot, update, error):
 
     bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'error.jpg'), 'rb'),
                   caption=f'Щось пішло не так... Спробуйте ще раз.')
-
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} OUT')
 
 
 def del_msg(bot, update):
