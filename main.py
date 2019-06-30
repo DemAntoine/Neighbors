@@ -470,10 +470,17 @@ def fuck_msg(bot, update):
     bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
+def greeting(bot, update):
+    """handle new chat members, and sent greeting message"""
+    text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
+    update.message.reply_text(text=text)
+
+
 def main():
     updater = Updater(KEY)
 
     dispatcher = updater.dispatcher
+    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
