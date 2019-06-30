@@ -34,7 +34,7 @@ class User(Model):
         username = '@' + self.username if self.username else ''
 
         if self.apartment:
-            return f'{href} {username}     {floor or "?"} пов. {self.apartment} :door:'
+            return f'{href} {username}     {floor or "?"} пов. {self.apartment} 🚪'
         else:
             return f'{href} {username}     {floor or "?"} пов.'
 
