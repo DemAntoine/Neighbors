@@ -22,7 +22,7 @@ def customTime(*args):
 log = logging.getLogger()
 # set custom timezone for logging
 logging.Formatter.converter = customTime
-fh = logging.FileHandler(LOGGER_CONFIG['file'])
+fh = logging.FileHandler(LOGGER_CONFIG['file'], encoding='utf-8')
 fh.setLevel(LOGGER_CONFIG['level'])
 fh.setFormatter(LOGGER_CONFIG['formatter'])
 log.addHandler(fh)

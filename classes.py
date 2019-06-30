@@ -9,6 +9,11 @@ class MyFilters(BaseFilter):
     def call_err(self, message):
         return 'error' in message.text
 
+    def integers(self, message):
+        pattern = r'^[0-9]+$'
+        found = re.findall(pattern, message.text)
+        return found if found else False
+
     def flood(self, message):
         pattern = r'\bфлуд\w{,4}\b|\bбубнил\w{,4}\b'
         if message.text:
@@ -22,6 +27,7 @@ class MyFilters(BaseFilter):
             return found if found else False
 
 
+filt_integers = MyFilters().integers
 filt_call_err = MyFilters().call_err
 filt_flood = MyFilters().flood
 filt_fuck = MyFilters().fuck

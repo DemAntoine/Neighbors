@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
-from telegram.error import BadRequest
 import sys
 import os
 import time
 from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg, houses_arr
-from classes import filt_call_err, filt_flood, filt_fuck
+from classes import filt_integers, filt_call_err, filt_flood, filt_fuck
 from config import log
 
 KEY = sys.argv[1]
@@ -16,10 +15,11 @@ print('key ...' + KEY[-6:] + ' successfully used')
 
 
 def chosen_owns(update):
+    user_id = update.effective_user.id
     try:
-        user = User.select().where(User.user_id == update.effective_user.id)[Show.get(user_id=update.effective_user.id).owns or 0]
+        user = User.select().where(User.user_id == user_id)[Show.get(user_id=user_id).owns or 0]
     except IndexError:
-        user = User.select().where(User.user_id == update.effective_user.id)[0]
+        user = User.select().where(User.user_id == user_id)[0]
     return user
 
 
@@ -31,8 +31,8 @@ def is_changed(update):
     full_name = update.effective_user.full_name
 
     user, created = User.get_or_create(user_id=user_id)
-
     Show.get_or_create(user_id=update.effective_user.id)
+
     if not created:
         # check if user changed own name attributes. If so - update
         if user.username != username or user.full_name != full_name:
@@ -49,6 +49,7 @@ def is_changed(update):
 
 
 def start_command(bot, update):
+    """handle /start command"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     is_changed(update)
     if update.callback_query:
@@ -58,14 +59,17 @@ def start_command(bot, update):
 
 
 def help_command(bot, update):
+    """handle /help command"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.sendMessage(chat_id=update.effective_user.id, text=help_msg, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+    bot.sendMessage(chat_id=update.effective_user.id, text=help_msg, parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup)
 
 
 def about_command(bot, update):
+    """handle /about command"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
@@ -75,7 +79,7 @@ def about_command(bot, update):
 
 
 def user_created_report(bot, update, created_user, text):
-    """send report-message for admin"""
+    """when created new, or updated user - send report-message for admins"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     if created_user.user_id in [3680016, 848451586, 113471434]:
         bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
@@ -85,7 +89,7 @@ def user_created_report(bot, update, created_user, text):
 
 
 def edit_or_show_kbd(bot, update):
-    """func show keyboard to chose: show neighbors or edit own info"""
+    """show keyboard to chose: show neighbors or edit own info"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     if User.get(user_id=update.effective_user.id).house and User.get(user_id=update.effective_user.id).section:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
@@ -101,6 +105,7 @@ def edit_or_show_kbd(bot, update):
 
 
 def check_owns(bot, update):
+    """check how many records for user in db"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     if not len(User.select().where(User.user_id == update.effective_user.id)) > 1:
         if update.callback_query.data == 'house_neighbors':
@@ -117,11 +122,13 @@ def check_owns(bot, update):
                 text = 'Змінюємо Ваші дані:\n' + User.get(
                     user_id=update.effective_user.id).setting_str() + '\nВ якому Ви будинку ? 🏠 :'
                 set_houses_kbd(bot, update, text)
+    # if more than 1 records for user, call func for select
     else:
         select_owns(bot, update)
     
 
 def select_owns(bot, update):
+    """if user have more than 1 records in db, select which one to show/edit"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     if update.callback_query.data == 'house_neighbors':
         text = 'Сусіди по якому будинку ? :'
@@ -142,6 +149,7 @@ def select_owns(bot, update):
 
 
 def owns_selected(bot, update):
+    """save params to db"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     view_edit = update.callback_query.data[-13:]
     owns = [s for s in list(update.callback_query.data) if s.isdigit()]
@@ -162,8 +170,8 @@ def owns_selected(bot, update):
 
 
 def houses_kbd(bot, update):
+    """show keyboard to chose house to show"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
-    """func show keyboard to chose house to show"""
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='p_h1'),
                  InlineKeyboardButton('Будинок 2', callback_data='p_h2')],
                 [InlineKeyboardButton('Будинок 3', callback_data='p_h3'),
@@ -174,8 +182,8 @@ def houses_kbd(bot, update):
 
 
 def section_kbd(bot, update):
+    """callbackQuery from houses_kbd(). show keyboard to chose section to show"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
-    """func show keyboard to chose section to show"""
     user_query = Show.get(user_id=update.effective_user.id)
     user_query.house = int(update.callback_query.data[3])
     user_query.save()
@@ -188,7 +196,7 @@ def section_kbd(bot, update):
                  InlineKeyboardButton('Секція 6', callback_data='p_s6')],
                 [InlineKeyboardButton('Показати всіх в цьому будинку 🏠', callback_data='show_this_house')]]
                 
-    # if selected house 3 or 4 so no 6 section there. delete it from keyboard
+    # if selected house 3 or 4, so no 6s section there. delete it from keyboard
     if user_query.house in [3, 4]:
         del keyboard[-2][1]
         
@@ -197,6 +205,7 @@ def section_kbd(bot, update):
 
 
 def save_params(bot, update):
+    """callbackQuery from section_kbd(). save params to db table"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     user_query = Show.get(user_id=update.effective_user.id)
     user_query.section = int(update.callback_query.data[3])
@@ -207,7 +216,7 @@ def save_params(bot, update):
 
 
 def set_houses_kbd(bot, update, text=''):
-    """func show keyboard to chose its own house"""
+    """show keyboard to chose its own house"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     if not User.get(user_id=update.effective_user.id).house:
         text = text
@@ -226,7 +235,7 @@ def set_houses_kbd(bot, update, text=''):
 
 
 def set_section_kbd(bot, update):
-    """func show keyboard to chose its own section"""
+    """callbackQuery from set_houses_kbd(). show keyboard to chose its own section"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     user = chosen_owns(update)
     user.house = int(update.callback_query.data[2])
@@ -250,7 +259,7 @@ def set_section_kbd(bot, update):
 
 
 def set_floor_kbd(bot, update):
-    """func show keyboard to chose its own floor"""
+    """callbackQuery from set_section_kbd(). show keyboard to chose its own floor"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     user = chosen_owns(update)
     user.section = int(update.callback_query.data[2])
@@ -274,8 +283,8 @@ def set_floor_kbd(bot, update):
 
 
 def set_apartment_kbd(bot, update):
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     """func show message with ask to tell its own appartment"""
+    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     floor = [s for s in list(update.callback_query.data) if s.isdigit()]
     floor = int(''.join(floor))
 
@@ -294,48 +303,44 @@ def set_apartment_kbd(bot, update):
     update.callback_query.answer()
 
 
-def apartment_save(bot, update):
+def msg_handler(bot, update):
+    """handle all text msg except other filters do"""
+    msg = update.message.text
     if update.effective_chat.type != 'private':
         return
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'maybe.jpg'), 'rb'),
+                  reply_markup=reply_markup,
+                  caption=f'Я ще не розумію людської мови, але вчусь, і скоро буду розуміть деякі слова і фрази\n'
+                  f'Краще скористайтесь меню')
+    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} text: {msg}')
+
+
+def apartment_save(bot, update):
+    """integer text handler"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     user_mode = Show.get(user_id=update.effective_user.id)
+    text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
     if user_mode.msg_apart_mode:
-        text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
-        text_failed = f'Вибачте, але номер квартири має містити <b>тільки цифри</b>.' \
-            f'Спробуйте ще раз, або нажміть кнопку відмови'
-        try:
-            apartment = int(update.message.text)
-            user = chosen_owns(update)
-            user.apartment = apartment
-
-            if not user.updated:
-                text = 'В базе СОЗДАН пользователь:\n'
-            else:
-                text = 'В базе ОБНОВЛЕН пользователь:\n'
-
-            user.updated = datetime.now().strftime('%y:%m:%d %H:%M:%S.%f')[:-4]
-            user.save()
-            bot.sendMessage(text=text_success, chat_id=update.effective_user.id, parse_mode=ParseMode.HTML)
-            log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} SAVED OK {update.message.text}')
-            user_mode.msg_apart_mode = False
-            user_mode.save()
-
-            user_created_report(bot, update, created_user=user, text=text)
-            start_command(bot, update)
-        except ValueError:
-            keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            update.message.reply_text(text=text_failed, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-            log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} VALUERROR {update.message.text}')
-    else:
-        bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'maybe.jpg'), 'rb'),
-                      caption=f'Я ще не розумію людської мови, але вчусь, і скоро буду розуміть деякі слова і фрази\n'
-                      f'Краще скористайтесь однією з кнопок')
-        log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} DONT undstnd {update.message.text}')
+        apartment = int(update.message.text)
+        user = chosen_owns(update)
+        user.apartment = apartment
+        if not user.updated:
+            text = 'В базе СОЗДАН пользователь:\n'
+        else:
+            text = 'В базе ОБНОВЛЕН пользователь:\n'
+        user.updated = datetime.now().strftime('%y:%m:%d %H:%M:%S.%f')[:-4]
+        user.save()
+        bot.sendMessage(text=text_success, chat_id=update.effective_user.id, parse_mode=ParseMode.HTML)
+        user_mode.msg_apart_mode = False
+        user_mode.save()
+        user_created_report(bot, update, created_user=user, text=text)
         start_command(bot, update)
 
 
 def save_user_data(bot, update):
+    """callbackQuery from reject. save user data"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     user = chosen_owns(update)
     if not user.updated:
@@ -358,13 +363,12 @@ def save_user_data(bot, update):
 
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
-
     start_command(bot, update)
 
 
 def show_house(bot, update):
+    """callbackQuery handler """
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
-    
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -387,7 +391,8 @@ def show_house(bot, update):
                  + '{}' * len(neighbors)).format(*neighbors)
 
     # if len(show_list) < 2500:
-    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list, reply_markup=reply_markup)
+    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
+                    reply_markup=reply_markup)
     # else:
     #     part_1, part_2, part_3 = show_list.partition('<pre>       📭 Секція 4</pre>\n')
     #     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=part_1[:-2])
@@ -398,7 +403,6 @@ def show_house(bot, update):
 
 def show_section(bot, update, some_section=False):
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
-    
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -427,6 +431,7 @@ def show_section(bot, update, some_section=False):
 
 
 def catch_err(bot, update, error):
+    """handle all telegram errors end send report"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
 
@@ -435,6 +440,7 @@ def catch_err(bot, update, error):
 
 
 def del_msg(bot, update):
+    """message text handler for specific words. See filters in classes module"""
     if update.effective_chat.type == 'private':
         apartment_save(bot, update)
         return
@@ -453,6 +459,7 @@ def del_msg(bot, update):
 
 
 def fuck_msg(bot, update):
+    """message text handler for specific words. See filters in classes module"""
     if update.effective_chat.type == 'private':
         apartment_save(bot, update)
         return
@@ -470,7 +477,7 @@ def fuck_msg(bot, update):
     bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
-def greeting(bot, update):
+def greeting(update):
     """handle new chat members, and sent greeting message"""
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
     update.message.reply_text(text=text)
@@ -480,7 +487,7 @@ def main():
     updater = Updater(KEY)
 
     dispatcher = updater.dispatcher
-    # dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
+    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
@@ -489,7 +496,8 @@ def main():
     dispatcher.add_handler(MessageHandler(filt_fuck, fuck_msg))
     dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
 
-    dispatcher.add_handler(MessageHandler(Filters.text, apartment_save))
+    dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
+    dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
