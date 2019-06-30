@@ -11,13 +11,15 @@ class MyFilters(BaseFilter):
 
     def flood(self, message):
         pattern = r'\bфлуд\w{,4}\b|\bбубнил\w{,4}\b'
-        found = re.findall(pattern, message.text, flags=re.IGNORECASE)
-        return found if found else False
+        if message.text:
+            found = re.findall(pattern, message.text, flags=re.IGNORECASE)
+            return found if found else False
 
     def fuck(self, message):
         pattern = r'\bхуй\w{,4}\b|\bп.зда\w{,4}\b'
-        found = re.findall(pattern, message.text, flags=re.IGNORECASE)
-        return found if found else False
+        if message.text:
+            found = re.findall(pattern, message.text, flags=re.IGNORECASE)
+            return found if found else False
 
 
 filt_call_err = MyFilters().call_err

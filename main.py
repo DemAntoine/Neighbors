@@ -442,7 +442,7 @@ def del_msg(bot, update):
     chat_id = update.message.chat_id
     message_id = update.message.message_id
     pattern = filt_flood(update.message)
-    warn_msg = f'Сообщения содержащие <code>{pattern}</code> удаляются автоматически'
+    warn_msg = f'Сообщения <code>{pattern}</code> удаляются автоматически'
 
     bot.deleteMessage(chat_id=chat_id, message_id=message_id)
     deleted_msg = bot.sendMessage(chat_id=chat_id, parse_mode=ParseMode.HTML, text=warn_msg)
@@ -465,7 +465,7 @@ def fuck_msg(bot, update):
     bot.deleteMessage(chat_id=chat_id, message_id=message_id)
     deleted_msg = bot.sendMessage(chat_id=chat_id, parse_mode=ParseMode.HTML, text=warn_msg)
 
-    time.sleep(7)
+    time.sleep(5)
 
     bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
@@ -480,14 +480,14 @@ def main():
     updater = Updater(KEY)
 
     dispatcher = updater.dispatcher
-    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
+    # dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
 
     # dispatcher.add_handler(MessageHandler(filt_call_err, call_err))
-    dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
     dispatcher.add_handler(MessageHandler(filt_fuck, fuck_msg))
+    dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
 
     dispatcher.add_handler(MessageHandler(Filters.text, apartment_save))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
