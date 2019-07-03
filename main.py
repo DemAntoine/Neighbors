@@ -6,7 +6,7 @@ import os
 import time
 from datetime import datetime
 from models import User, Show
-from constants import help_msg, about_msg, houses_arr
+from constants import help_msg, about_msg, building_msg, houses_arr
 from classes import filt_integers, filt_call_err, filt_flood, filt_fuck
 from config import log
 
@@ -76,6 +76,14 @@ def about_command(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text=about_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
+                    
+
+def building(bot, update):
+    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    bot.sendMessage(chat_id=update.effective_user.id, text=building_msg,
+                    parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
 
 
 def user_created_report(bot, update, created_user, text):
@@ -94,11 +102,13 @@ def edit_or_show_kbd(bot, update):
     if User.get(user_id=update.effective_user.id).house and User.get(user_id=update.effective_user.id).section:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
+                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
                     [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
                      InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')]]
     else:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                    [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')]]
+                    [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
+                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text='Меню:',
                     reply_markup=reply_markup, parse_mode=ParseMode.HTML)
@@ -499,6 +509,7 @@ def main():
     dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
     dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^p_h'))
