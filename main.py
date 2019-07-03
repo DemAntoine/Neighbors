@@ -80,6 +80,7 @@ def about_command(bot, update):
 
 def building(bot, update):
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
+    update.callback_query.answer()
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text=building_msg,
