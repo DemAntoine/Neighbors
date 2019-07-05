@@ -110,7 +110,7 @@ def edit_or_show_kbd(bot, update):
                      InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')]]
     else:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                    [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
+                    [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
                     [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text='Меню:',
