@@ -523,7 +523,7 @@ def prepare_data():
     for house_ in houses:
         count = query_with.where(User.house == house_.house).count()
         pie_values.append(count)
-        neighbors.append('\n🏠 <b>Будинок '.rjust(30, ' ') + f'{house_.house}</b> <code>({count})</code>\n')
+        neighbors.append('\n' + '🏠 <b>Будинок '.rjust(30, ' ') + f'{house_.house}</b> <code>({count})</code>\n')
         sections = query_with.select(User.section).where(User.house == house_.house).distinct().order_by(User.section)
         for section_ in sections:
             count = query_with.where(User.house == house_.house, User.section == section_.section).count()
