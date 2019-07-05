@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
-from telegram.error import (TelegramError, Unauthorized, BadRequest, 
+from telegram.error import (TelegramError, Unauthorized, BadRequest,
                             TimedOut, ChatMigrated, NetworkError)
 import sys
 import os
 import time
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg, building_msg, houses_arr, statistics_msg
@@ -78,7 +80,7 @@ def about_command(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text=about_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
-                    
+
 
 def building(bot, update):
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
@@ -106,13 +108,14 @@ def menu_kbd(bot, update):
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
                     [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
-                    [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
+                    [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')],
                     [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
                      InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')]]
     else:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
-                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')]]
+                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
+                    [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text='Меню:',
                     reply_markup=reply_markup, parse_mode=ParseMode.HTML)
@@ -139,7 +142,7 @@ def check_owns(bot, update):
     # if more than 1 records for user, call func for select
     else:
         select_owns(bot, update)
-    
+
 
 def select_owns(bot, update):
     """if user have more than 1 records in db, select which one to show/edit"""
@@ -209,11 +212,11 @@ def section_kbd(bot, update):
                 [InlineKeyboardButton('Секція 5', callback_data='p_s5'),
                  InlineKeyboardButton('Секція 6', callback_data='p_s6')],
                 [InlineKeyboardButton('Показати всіх в цьому будинку 🏠', callback_data='show_this_house')]]
-                
+
     # if selected house 3 or 4, so no 6s section there. delete it from keyboard
     if user_query.house in [3, 4]:
         del keyboard[-2][1]
-        
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Яку секцію показати ? 🔢 :', reply_markup=reply_markup)
 
@@ -262,11 +265,11 @@ def set_section_kbd(bot, update):
                 [InlineKeyboardButton('Секція 5', callback_data='_s5'),
                  InlineKeyboardButton('Секція 6', callback_data='_s6')],
                 [InlineKeyboardButton('Завершити редагування', callback_data='_section_reject')]]
-                
+
     # if selected house 3 or 4 so no 6 section there. delete it from keyboard
     if user.house in [3, 4]:
         del keyboard[-2][1]
-        
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('В якій Ви секції ? 🔢 :', reply_markup=reply_markup)
     update.callback_query.answer()
@@ -385,7 +388,7 @@ def show_house(bot, update):
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     if update.callback_query.data == 'show_this_house':
         # if user want see selected house
         user_query = Show.get(user_id=update.effective_user.id)
@@ -419,7 +422,7 @@ def show_section(bot, update, some_section=False):
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     if not some_section:
         user_query = chosen_owns(update)
     else:
@@ -442,7 +445,6 @@ def show_section(bot, update, some_section=False):
 #     """temporary for testing errors"""
 #     bot.sendMessage(chat_id=3680016, text='called err')
 #     raise TimedOut
-    
 
 
 def catch_err(bot, update, error):
@@ -451,11 +453,18 @@ def catch_err(bot, update, error):
     try:
         raise error
     except Unauthorized:
-        bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
-    except (BadRequest, TimedOut, NetworkError, TelegramError):
-        bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
+        bot.sendMessage(chat_id=3680016,
+                        text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
+    except BadRequest:
+        try:
+            bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}')
+        except:
+            log.info('*' * 100)
+    except (TimedOut, NetworkError, TelegramError):
+        bot.sendMessage(chat_id=3680016,
+                        text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
         bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'error.jpg'), 'rb'),
-                  caption=f'Щось пішло не так... Спробуйте ще раз.')
+                      caption=f'Щось пішло не так... Спробуйте ще раз.')
 
 
 def del_msg(bot, update):
@@ -500,40 +509,90 @@ def greeting(update):
     """handle new chat members, and sent greeting message"""
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
     update.message.reply_text(text=text)
-    
-    
+
+
+def prepare_data():
+    """Create show_list (string) for statistic message, and pie_values (list) for chart"""
+    query = User.select()
+    query_with = query.where(User.house, User.section)
+    query_without = query.where(User.house.is_null() | User.section.is_null())
+    houses = query_with.select(User.house).distinct().order_by(User.house)
+
+    neighbors = []
+    pie_values = []
+    for house_ in houses:
+        count = query_with.where(User.house == house_.house).count()
+        pie_values.append(count)
+        neighbors.append('🏠 <b>Будиок '.rjust(30, ' ') + f'{house_.house}</b> <code>({count})</code>\n')
+        sections = query_with.select(User.section).where(User.house == house_.house).distinct().order_by(User.section)
+        for section_ in sections:
+            count = query_with.where(User.house == house_.house, User.section == section_.section).count()
+            neighbors.append(f'Секція{section_.section} <code>({count})</code>\n')
+
+    show_list = (f'<b>Всього користувачів: {query.count()}</b>\n'
+                 f'<i>Дані вказані {query_with.count()}</i>\n'
+                 f'<i>Дані не вказані {query_without.count()}</i>\n'
+                 + '{}' * len(neighbors)).format(*neighbors)
+
+    return {'show_list': show_list, 'pie_values': pie_values}
+
+
 def statistics(bot, update):
     """callbackQuery handler. pattern:^statistics$"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu'),
+                 InlineKeyboardButton('Графіка', callback_data='charts')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    show_list = prepare_data()['show_list']
+
+    update.callback_query.answer()
+    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
+                    reply_markup=reply_markup)
+
+
+def more_charts(bot, update):
+    """callbackQuery handler. pattern:^more_charts$"""
+    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    user_query = User.select()
-    houses = User.select(User.house).distinct().order_by(User.house)
-    
-    for house_ in houses:
-        print('Будинок', house_.house, '-', user_query.where(User.house == house_.house).count())
-        sections = User.select(User.section).where(User.house == house_.house).distinct().order_by(User.section)
-        for section_ in sections:
-            print('Section', section_.section,'-', user_query.where(User.house == house_.house, User.section == section_.section).count())
-    
-    # print(user_query.count())
-
-    # neighbors = []
-    # sections = User.select(User.section).where(User.house == user_query.house).distinct().order_by(User.section)
-
-    # for i in sections:
-    #     neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
-    #     for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
-    #         neighbors.append(str(user) + '\n')
-
-    # show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
-    #              + '{}' * len(neighbors)).format(*neighbors)
-
-    
-    # bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
-    #                 reply_markup=reply_markup)
     update.callback_query.answer()
+    bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'maybe.jpg'), 'rb'),
+                  reply_markup=reply_markup, caption=f'Скоро буде більше цікавих і корисних графіків\n')
+
+
+def charts(bot, update):
+    """callbackQuery handler. pattern:^charts$. Show chart"""
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu'),
+                 InlineKeyboardButton('Більше графіків', callback_data='more_charts')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    values = prepare_data()['pie_values']
+    colors = ['green', 'blue', 'yellow', 'red']
+    data_names = [f'Буд. {i + 1} => {values[i]}' for i in range(4)]
+    labels = ['Буд. 1', 'Буд. 2', 'Буд. 3', 'Буд. 4']
+
+    # func for setting values format on pie
+    def make_autopct(values):
+        def my_autopct(pct):
+            total = sum(values)
+            val = int(round(pct * total / 100.0))
+            return val
+
+        return my_autopct
+
+    fig = plt.figure(figsize=(10, 7))
+    mpl.rcParams.update({'font.size': 20})
+    plt.pie(values, autopct=make_autopct(values), radius=1.5, colors=colors, pctdistance=0.8,
+            explode=[0] + [0 for _ in range(len(data_names) - 1)])
+    plt.legend(bbox_to_anchor=(-0.47, 0.93, 0.27, 0.25), loc='upper left', labels=data_names)
+
+    img_path = os.path.join('img', 'pie.png')
+    fig.savefig(img_path)
+
+    update.callback_query.answer()
+    bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'pie.png'), 'rb'),
+                  reply_markup=reply_markup, caption='Поки що є тільки такий графік')
 
 
 def main():
@@ -554,6 +613,8 @@ def main():
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=statistics, pattern='^statistics$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=more_charts, pattern='^more_charts$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=charts, pattern='^charts$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^p_h'))
