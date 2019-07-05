@@ -8,7 +8,7 @@ import os
 import time
 from datetime import datetime
 from models import User, Show
-from constants import help_msg, about_msg, building_msg, houses_arr
+from constants import help_msg, about_msg, building_msg, houses_arr, statistics_msg
 from classes import filt_integers, filt_call_err, filt_flood, filt_fuck
 from config import log
 
@@ -106,6 +106,7 @@ def menu_kbd(bot, update):
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
                     [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
+                    [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
                     [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
                      InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')]]
     else:
@@ -499,6 +500,40 @@ def greeting(update):
     """handle new chat members, and sent greeting message"""
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
     update.message.reply_text(text=text)
+    
+    
+def statistics(bot, update):
+    """callbackQuery handler. pattern:^statistics$"""
+    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    user_query = User.select()
+    houses = User.select(User.house).distinct().order_by(User.house)
+    
+    for house_ in houses:
+        print('Будинок', house_.house, '-', user_query.where(User.house == house_.house).count())
+        sections = User.select(User.section).where(User.house == house_.house).distinct().order_by(User.section)
+        for section_ in sections:
+            print('Section', section_.section,'-', user_query.where(User.house == house_.house, User.section == section_.section).count())
+    
+    # print(user_query.count())
+
+    # neighbors = []
+    # sections = User.select(User.section).where(User.house == user_query.house).distinct().order_by(User.section)
+
+    # for i in sections:
+    #     neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
+    #     for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
+    #         neighbors.append(str(user) + '\n')
+
+    # show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
+    #              + '{}' * len(neighbors)).format(*neighbors)
+
+    
+    # bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
+    #                 reply_markup=reply_markup)
+    update.callback_query.answer()
 
 
 def main():
@@ -518,6 +553,7 @@ def main():
     dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=statistics, pattern='^statistics$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^p_h'))
