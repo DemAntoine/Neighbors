@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
+from telegram.error import (TelegramError, Unauthorized, BadRequest, 
+                            TimedOut, ChatMigrated, NetworkError)
 import sys
 import os
 import time
@@ -437,16 +439,21 @@ def show_section(bot, update, some_section=False):
 
 # def call_err(bot, update):
 #     """temporary for testing errors"""
-#     bot.sendMessage(chat_id=update.effective_user.id, text='called err')
-#     raise BadRequest('bad request')
+#     bot.sendMessage(chat_id=3680016, text='called err')
+#     raise TimedOut
+    
 
 
 def catch_err(bot, update, error):
     """handle all telegram errors end send report"""
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
-    bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
-
-    bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'error.jpg'), 'rb'),
+    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} {type(error)} IN')
+    try:
+        raise error
+    except Unauthorized:
+        bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
+    except (BadRequest, TimedOut, NetworkError, TelegramError):
+        bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
+        bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'error.jpg'), 'rb'),
                   caption=f'Щось пішло не так... Спробуйте ще раз.')
 
 
