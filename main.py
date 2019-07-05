@@ -57,7 +57,7 @@ def start_command(bot, update):
     if update.callback_query:
         update.callback_query.answer()
 
-    edit_or_show_kbd(bot, update)
+    menu_kbd(bot, update)
 
 
 def help_command(bot, update):
@@ -99,7 +99,7 @@ def user_created_report(bot, update, created_user, text):
         bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
 
 
-def edit_or_show_kbd(bot, update):
+def menu_kbd(bot, update):
     """show keyboard to chose: show neighbors or edit own info"""
     log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
     if User.get(user_id=update.effective_user.id).house and User.get(user_id=update.effective_user.id).section:
