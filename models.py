@@ -60,6 +60,12 @@ class User(Model):
         else:
             return f'{self.href} {self.username_} дом {self.house} сек. {self.section or "?"} эт. {self.floor_ or "?"} id {self.user_id}'
 
+    def joined_str(self):
+        if self.apartment:
+            return f'{self.href} {self.username_}   {self.house} буд. {self.section} сек.  {self.floor_ or "?"} пов. {self.apartment} 🚪'
+        else:
+            return f'{self.href} {self.username_}   {self.house} буд. {self.section} сек.  {self.floor_ or "?"} пов.'
+
 
 class Show(Model):
     class Meta:

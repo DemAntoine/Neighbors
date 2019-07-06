@@ -18,6 +18,8 @@ from functools import wraps
 KEY = sys.argv[1]
 print('key ...' + KEY[-6:] + ' successfully used')
 
+previous_query = None
+
 
 def send_typing_action(func):
     """Sends typing action while processing func command."""
@@ -531,6 +533,9 @@ def prepare_data():
     query_without = query.where(User.house.is_null() | User.section.is_null())
     houses = query_with.select(User.house).distinct().order_by(User.house)
 
+    # last 3 joined users
+    last_3_users = list(reversed(query_with.order_by(User.id)[-3:]))
+
     neighbors = []
     pie_values = []
     bars_values = {}
@@ -549,9 +554,13 @@ def prepare_data():
     show_list = (f'<b>Всього користувачів: {query.count()}</b>\n'
                  f'<i>Дані вказані {query_with.count()}</i>\n'
                  f'<i>Дані не вказані {query_without.count()}</i>\n'
-                 + '{}' * len(neighbors)).format(*neighbors)
+                 + '{}' * len(neighbors)).format(*neighbors) + '\n<b>Нові користувачі</b>'
 
-    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values, 'query': query}
+    # add to msg last 3 joined users
+    for i in range(len(last_3_users)):
+        show_list += f'\n{last_3_users[i].joined_str()}'
+
+    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values, 'last_3_users': last_3_users}
 
 
 def statistics(bot, update):
@@ -626,12 +635,9 @@ def charts(bot, update):
     """callbackQuery handler. pattern:^charts$. Show chart"""
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    actual_query = User.select()
 
-    if actual_query != 1:
-        make_pie()
-        make_bars()
-
+    make_pie()
+    make_bars()
     update.callback_query.answer()
 
     media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb'))]
