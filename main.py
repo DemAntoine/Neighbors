@@ -18,8 +18,6 @@ from functools import wraps
 KEY = sys.argv[1]
 print('key ...' + KEY[-6:] + ' successfully used')
 
-previous_query = None
-
 
 def send_typing_action(func):
     """Sends typing action while processing func command."""
@@ -560,7 +558,7 @@ def prepare_data():
     for i in range(len(last_3_users)):
         show_list += f'\n{last_3_users[i].joined_str()}'
 
-    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values, 'last_3_users': last_3_users}
+    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values}
 
 
 def statistics(bot, update):
