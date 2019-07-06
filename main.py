@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, InputMediaPhoto, ChatAction
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 from telegram.error import (TelegramError, Unauthorized, BadRequest,
                             TimedOut, ChatMigrated, NetworkError)
@@ -13,9 +13,22 @@ from models import User, Show
 from constants import help_msg, about_msg, building_msg, houses_arr, statistics_msg
 from classes import filt_integers, filt_call_err, filt_flood, filt_fuck
 from config import log
+from functools import wraps
 
 KEY = sys.argv[1]
 print('key ...' + KEY[-6:] + ' successfully used')
+
+
+def send_typing_action(func):
+    """Sends typing action while processing func command."""
+
+    @wraps(func)
+    def command_func(*args, **kwargs):
+        bot, update = args
+        bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.UPLOAD_DOCUMENT)
+        return func(bot, update, **kwargs)
+
+    return command_func
 
 
 def chosen_owns(update):
@@ -520,21 +533,25 @@ def prepare_data():
 
     neighbors = []
     pie_values = []
+    bars_values = {}
     for house_ in houses:
         count = query_with.where(User.house == house_.house).count()
         pie_values.append(count)
         neighbors.append('\n' + '🏠 <b>Будинок '.rjust(30, ' ') + f'{house_.house}</b> <code>({count})</code>\n')
         sections = query_with.select(User.section).where(User.house == house_.house).distinct().order_by(User.section)
+        section_dict = {}
         for section_ in sections:
             count = query_with.where(User.house == house_.house, User.section == section_.section).count()
             neighbors.append(f'Секція{section_.section} <code>({count})</code>\n')
+            section_dict[section_.section] = count
+        bars_values[house_.house] = section_dict
 
     show_list = (f'<b>Всього користувачів: {query.count()}</b>\n'
                  f'<i>Дані вказані {query_with.count()}</i>\n'
                  f'<i>Дані не вказані {query_without.count()}</i>\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
-    return {'show_list': show_list, 'pie_values': pie_values}
+    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values}
 
 
 def statistics(bot, update):
@@ -551,26 +568,10 @@ def statistics(bot, update):
                     reply_markup=reply_markup)
 
 
-def more_charts(bot, update):
-    """callbackQuery handler. pattern:^more_charts$"""
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} IN')
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.answer()
-    bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'maybe.jpg'), 'rb'),
-                  reply_markup=reply_markup, caption=f'Скоро буде більше цікавих і корисних графіків\n')
-
-
-def charts(bot, update):
-    """callbackQuery handler. pattern:^charts$. Show chart"""
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu'),
-                 InlineKeyboardButton('Більше графіків', callback_data='more_charts')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
+def make_pie():
+    """create pie total by houses"""
     values = prepare_data()['pie_values']
-    colors = ['green', 'blue', 'yellow', 'red']
-    data_names = [f'Буд. {i + 1} => {values[i]}' for i in range(4)]
-    labels = ['Буд. 1', 'Буд. 2', 'Буд. 3', 'Буд. 4']
+    labels = [f'Буд. {i + 1}' for i in range(len(values))]
 
     # func for setting values format on pie
     def make_autopct(values):
@@ -583,16 +584,59 @@ def charts(bot, update):
 
     fig = plt.figure(figsize=(10, 7))
     mpl.rcParams.update({'font.size': 20})
-    plt.pie(values, autopct=make_autopct(values), radius=1.5, colors=colors, pctdistance=0.8,
-            explode=[0] + [0 for _ in range(len(data_names) - 1)])
-    plt.legend(bbox_to_anchor=(-0.47, 0.93, 0.27, 0.25), loc='upper left', labels=data_names)
+    plt.pie(values, autopct=make_autopct(values), radius=1.5, pctdistance=0.8,
+            shadow=True, labels=labels, labeldistance=1.05)
 
     img_path = os.path.join('img', 'pie.png')
     fig.savefig(img_path)
+    plt.clf()
+    plt.close()
 
+
+def make_bars():
+    """create bars for houses sections count"""
+    values_ = prepare_data()['bars_values']
+
+    def autolabel(rects, height_factor):
+        for i, rect in enumerate(rects):
+            height = rect.get_height()
+            label = '%d' % int(height)
+            ax.text(rect.get_x() + rect.get_width() / 2., height_factor * height,
+                    '{}'.format(label),
+                    ha='center', va='bottom')
+
+    mpl.rcParams.update({'font.size': 15})
+
+    for house in values_:
+        sections = [f'Сек{i}' for i in values_[house].keys()]
+        values = [i for i in values_[house].values()]
+
+        plt.bar(sections, values)
+        ax = plt.gca()
+        ax.set_title(f'Будинок {house}')
+        autolabel(ax.patches, height_factor=0.85)
+
+        plt.savefig(os.path.join('img', f'bar{house}.png'), dpi=400)
+        plt.clf()
+        plt.close()
+
+
+@send_typing_action
+def charts(bot, update):
+    """callbackQuery handler. pattern:^charts$. Show chart"""
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    make_pie()
+    make_bars()
     update.callback_query.answer()
-    bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'pie.png'), 'rb'),
-                  reply_markup=reply_markup, caption='Поки що є тільки такий графік')
+
+    media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb'))]
+    media += [InputMediaPhoto(open(os.path.join('img', f'bar{i}.png'), 'rb')) for i in range(1, 5)]
+
+    bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
+
+    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup, text='Повернутись в меню:')
 
 
 def main():
@@ -604,7 +648,7 @@ def main():
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
 
-    # dispatcher.add_handler(MessageHandler(filt_call_err, call_err))
+    # dispatcher.add_handler(MessageHandler(filt_call_err, make_bars))
     dispatcher.add_handler(MessageHandler(filt_fuck, fuck_msg))
     dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
 
@@ -613,7 +657,6 @@ def main():
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=statistics, pattern='^statistics$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=more_charts, pattern='^more_charts$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=charts, pattern='^charts$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
