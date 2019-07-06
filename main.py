@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from datetime import datetime
 from models import User, Show
-from constants import help_msg, about_msg, building_msg, houses_arr, statistics_msg
+from constants import help_msg, about_msg, building_msg, houses_arr
 from classes import filt_integers, filt_call_err, filt_flood, filt_fuck
 from config import log
 from functools import wraps
@@ -551,7 +551,7 @@ def prepare_data():
                  f'<i>Дані не вказані {query_without.count()}</i>\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
-    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values}
+    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values, 'query': query}
 
 
 def statistics(bot, update):
@@ -626,8 +626,12 @@ def charts(bot, update):
     """callbackQuery handler. pattern:^charts$. Show chart"""
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    make_pie()
-    make_bars()
+    actual_query = User.select()
+
+    if actual_query != 1:
+        make_pie()
+        make_bars()
+
     update.callback_query.answer()
 
     media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb'))]
