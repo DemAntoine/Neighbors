@@ -67,6 +67,9 @@ building_msg = '''
 🔸 <a href="https://youtu.be/owTOEcXrNqE">від 28 червня 2018</a>
 🔸 <a href="https://www.youtube.com/watch?v=GjAw9PCfkAc&feature=youtu.be">від 31 березня 2019</a>
 🔸 <a href="https://novostroyki.lun.ua/uk/жк-чарівне-місто-київ/аерообліт">Аерообліт 360 (весна 2019)</a>
+🔸 <a href="https://youtu.be/TzQw3WWzYz0">Аэрооблет 19 мая 2019</a>
+🔸 <a href="https://youtu.be/IbrpPkZHY1I">Аэрооблет 25 мая 2019</a>
+🔸 <a href="https://youtu.be/uRj8DEcrE-Q">Аэрооблет 6 июля 2019</a>
 
 <b>Ми на карті</b>
 🔸 <a href="https://2gis.ua/kiev/geo/70030076139842203%2C30.695629%2C50.410309?queryState=center%2F30.696831%2C50.408654%2Fzoom%2F16">2гис</a>
