@@ -461,23 +461,16 @@ def show_section(bot, update, some_section=False):
 
 
 def catch_err(bot, update, error):
-    """handle all telegram errors end send report"""
-    log.info(f'user_id: {update.effective_user.id} username: {update.effective_user.username} {type(error)} IN')
+    """handle all telegram errors end send report. There is no 'update' so can't logging much info"""
+    user_id = update.effective_user.id if update else 'no update'
     try:
         raise error
     except Unauthorized:
-        bot.sendMessage(chat_id=3680016,
-                        text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
+        bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)} id: {user_id}')
     except BadRequest:
-        try:
-            bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)}')
-        except:
-            log.info('*' * 100)
+        bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)} id: {user_id}')
     except (TimedOut, NetworkError, TelegramError):
-        bot.sendMessage(chat_id=3680016,
-                        text=f'ERROR:\n {error}\n type {type(error)}\n user_id {update.effective_user.id}')
-        bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'error.jpg'), 'rb'),
-                      caption=f'Щось пішло не так... Спробуйте ще раз.')
+        bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)} id: {user_id}')
 
 
 def del_msg(bot, update):
