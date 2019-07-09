@@ -398,7 +398,6 @@ def apartment_save(bot, update):
         start_command(bot, update)
         
 
-
 def save_user_data(bot, update):
     """callbackQuery from reject. save user data"""
     log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
@@ -546,7 +545,7 @@ def greeting(bot, update):
     chat_id = update.message.chat_id
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
     deleted_msg = update.message.reply_text(text=text)
-    time.sleep(60)
+    time.sleep(15)
     bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
