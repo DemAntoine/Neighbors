@@ -115,6 +115,31 @@ def user_created_report(bot, update, created_user, text):
         bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
 
 
+def new_neighbor_report(bot, update, created_user):
+    """Send message for users who enabled notifications"""
+    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    
+    # query for users who set notifications as _notify_house
+    query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_house')
+    query_users = User.select(User.user_id).where(User.house == created_user.house)
+    query = query_params & query_users
+    
+    for i, user in enumerate(query):
+        if i // 29 == 0:
+            time.sleep(1)
+        bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML, text=f'Новий сусід\n{created_user.joined_str()}')
+    
+    # query for users who set notifications as _notify_section    
+    query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_section')
+    query_users = User.select(User.user_id).where(User.house == created_user.house, User.section == created_user.section)
+    query = query_params & query_users
+    
+    for i, user in enumerate(query):
+        if i // 29 == 0:
+            time.sleep(1)
+        bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML, text=f'Новий сусід\n{created_user.joined_str()}')
+
+
 def menu_kbd(bot, update):
     """show keyboard to chose: show neighbors or edit own info"""
     log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
@@ -124,7 +149,8 @@ def menu_kbd(bot, update):
                     [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
                     [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')],
                     [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
-                     InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')]]
+                     InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
+                     [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')]]
     else:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
@@ -368,7 +394,9 @@ def apartment_save(bot, update):
         user_mode.msg_apart_mode = False
         user_mode.save()
         user_created_report(bot, update, created_user=user, text=text)
+        new_neighbor_report(bot, update, created_user=user)
         start_command(bot, update)
+        
 
 
 def save_user_data(bot, update):
@@ -392,9 +420,10 @@ def save_user_data(bot, update):
 
     update.callback_query.answer()
     user_created_report(bot, update, created_user=user, text=text)
-
+    new_neighbor_report(bot, update, created_user=user)
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
+    
     start_command(bot, update)
 
 
@@ -649,6 +678,39 @@ def charts(bot, update):
                     reply_markup=reply_markup, text='Повернутись в меню:')
 
 
+def notifications_kbd(bot, update):
+    """callbackQuery handler. pattern:^notifications$. Show notifications keyboard settings"""
+    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    keyboard = [[InlineKeyboardButton('В моєму будинку 🏠', callback_data='_notify_house')],
+                [InlineKeyboardButton('В моїй секції 🔢', callback_data='_notify_section')],
+                [InlineKeyboardButton('Вимкнути сповіщення 🔕', callback_data='_notify_OFF')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    user = Show.get(user_id=update.effective_user.id)
+    _dict = {None: 'Вимкнено', '_notify_OFF': 'Вимкнено', '_notify_section': 'В моїй секції 🔢', '_notify_house': 'В моєму будинку 🏠'}
+    text = f'Зараз сповіщення встановленні в режим\n<b>{_dict[user.notification_mode]}</b>\nОтримувати сповіщення коли з\'явиться новий сусід:'
+    update.callback_query.answer()
+    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=text, reply_markup=reply_markup, 
+                        message_id=update.effective_message.message_id)
+
+
+def notifications_save(bot, update):
+    """callbackQuery handler. pattern: from notifications_kbd func. Save notifications settings to db"""
+    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    
+    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    user = Show.get(user_id=update.effective_user.id)
+    user.notification_mode = update.callback_query.data
+    user.save()
+    
+    bot.editMessageText(text='Ок! Налаштування збережено', chat_id=update.effective_chat.id, message_id=update.effective_message.message_id, 
+                        reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+    
+    update.callback_query.answer()
+
+
 def main():
     updater = Updater(KEY)
 
@@ -668,6 +730,8 @@ def main():
     dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=statistics, pattern='^statistics$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=charts, pattern='^charts$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=notifications_kbd, pattern='^notifications$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=notifications_save, pattern='^_notify_section$|^_notify_house$|^_notify_OFF$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^p_h'))

@@ -81,6 +81,7 @@ class Show(Model):
     owns = IntegerField(null=True)
 
     msg_apart_mode = BooleanField(null=True, default=False)
+    notification_mode = CharField(null=True, default=None)
 
     def __str__(self):
         return f'{self.user_id} - {self.house} : {self.section}-{self.floor}'
