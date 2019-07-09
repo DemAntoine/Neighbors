@@ -537,16 +537,17 @@ def fuck_msg(bot, update):
 
     bot.deleteMessage(chat_id=chat_id, message_id=message_id)
     deleted_msg = bot.sendMessage(chat_id=chat_id, parse_mode=ParseMode.HTML, text=warn_msg)
-
     time.sleep(5)
-
     bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
-def greeting(update):
+def greeting(bot, update):
     """handle new chat members, and sent greeting message"""
+    chat_id = update.message.chat_id
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
-    update.message.reply_text(text=text)
+    deleted_msg = update.message.reply_text(text=text)
+    time.sleep(60)
+    bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
 def prepare_data():
@@ -643,8 +644,6 @@ def make_bars():
     mpl.rcParams.update({'font.size': 15})
 
     for house in values_:
-        # sections = [f'Сек{i}' for i in values_[house].keys()]
-        # values = [i for i in values_[house].values()]
         sections = [f'Сек{i[-1]}' for i in houses_arr[f'house_{house}']]
         values = [values_[house].get(int(i[-1]), 0) for i in sections]
 
@@ -687,11 +686,13 @@ def notifications_kbd(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     user = Show.get(user_id=update.effective_user.id)
-    _dict = {None: 'Вимкнено', '_notify_OFF': 'Вимкнено', '_notify_section': 'В моїй секції 🔢', '_notify_house': 'В моєму будинку 🏠'}
-    text = f'Зараз сповіщення встановленні в режим\n<b>{_dict[user.notification_mode]}</b>\nОтримувати сповіщення коли з\'явиться новий сусід:'
+    _dict = {None: 'Вимкнено', '_notify_OFF': 'Вимкнено',
+             '_notify_section': 'В моїй секції 🔢', '_notify_house': 'В моєму будинку 🏠'}
+    text = f'Зараз сповіщення встановленні в режим\n' \
+        f'<b>{_dict[user.notification_mode]}</b>\nОтримувати сповіщення коли з\'явиться новий сусід:'
     update.callback_query.answer()
-    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=text, reply_markup=reply_markup, 
-                        message_id=update.effective_message.message_id)
+    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
+                        text=text, reply_markup=reply_markup, message_id=update.effective_message.message_id)
 
 
 def notifications_save(bot, update):
@@ -704,10 +705,8 @@ def notifications_save(bot, update):
     user = Show.get(user_id=update.effective_user.id)
     user.notification_mode = update.callback_query.data
     user.save()
-    
-    bot.editMessageText(text='Ок! Налаштування збережено', chat_id=update.effective_chat.id, message_id=update.effective_message.message_id, 
-                        reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-    
+    bot.editMessageText(text='Ок! Налаштування збережено', chat_id=update.effective_chat.id, parse_mode=ParseMode.HTML,
+                        message_id=update.effective_message.message_id, reply_markup=reply_markup)
     update.callback_query.answer()
 
 
@@ -731,7 +730,8 @@ def main():
     dispatcher.add_handler(CallbackQueryHandler(callback=statistics, pattern='^statistics$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=charts, pattern='^charts$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=notifications_kbd, pattern='^notifications$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=notifications_save, pattern='^_notify_section$|^_notify_house$|^_notify_OFF$'))
+    dispatcher.add_handler(
+        CallbackQueryHandler(callback=notifications_save, pattern='^_notify_section$|^_notify_house$|^_notify_OFF$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^p_h'))
