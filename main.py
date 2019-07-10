@@ -355,7 +355,7 @@ def set_apartment_kbd(bot, update):
 
 def msg_handler(bot, update):
     """handle all text msg except other filters do"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username} {update.message.chat_id}')
+    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
     msg = update.message.text
     if update.effective_chat.type != 'private':
         return
@@ -372,13 +372,13 @@ def jubilee():
     """Check if new added user is 'hero of the day' i.e some round number in db"""
     query = User.select().where(User.house, User.section)
     if query.count() == 250:
-        # bot.sendMessage(chat_id=)
+        # bot.sendMessage(chat_id=-1001307649156)
         pass
     elif query.where(User.house == 1).count() == 100:
-        # some action here
+        # bot.sendMessage(chat_id=-1001307649156)
         pass
     elif query.where(User.house == 2).count() == 100:
-        # some action here
+        # bot.sendMessage(chat_id=-1001307649156)
         pass
 
 
