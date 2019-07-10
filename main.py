@@ -606,10 +606,10 @@ def statistics(bot, update):
                     reply_markup=reply_markup)
 
 
-def make_pie():
+def make_pie(prepared_data):
     """create pie total by houses"""
     log.info('this func has no update')
-    values = prepare_data()['pie_values']
+    values = prepared_data['pie_values']
     labels = [f'Буд. {i + 1}' for i in range(len(values))]
 
     # func for setting values format on pie
@@ -632,10 +632,10 @@ def make_pie():
     plt.close()
 
 
-def make_bars():
+def make_bars(prepared_data):
     """create bars for houses sections count"""
     log.info('this func has no update')
-    values_ = prepare_data()['bars_values']
+    values_ = prepared_data['bars_values']
 
     def autolabel(rects, height_factor):
         for i, rect in enumerate(rects):
@@ -655,8 +655,9 @@ def make_bars():
         ax = plt.gca()
         ax.set_title(f'Будинок {house}')
         autolabel(ax.patches, height_factor=0.85)
-
-        plt.savefig(os.path.join('img', f'bar{house}.png'), dpi=400)
+        
+        img_path = os.path.join('img', f'bar{house}.png')
+        plt.savefig(img_path, dpi=200)
         plt.clf()
         plt.close()
 
@@ -667,16 +668,17 @@ def charts(bot, update):
     log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
-    make_pie()
-    make_bars()
+    
+    prepared_data = prepare_data()
+    make_pie(prepared_data)
+    make_bars(prepared_data)
     update.callback_query.answer()
 
     media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb'))]
     media += [InputMediaPhoto(open(os.path.join('img', f'bar{i}.png'), 'rb')) for i in range(1, 5)]
-
+    
     bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
-
+    
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup, text='Повернутись в меню:')
 
