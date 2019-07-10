@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, InputMediaPhoto, ChatAction
-from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters, run_async
 from telegram.error import (TelegramError, Unauthorized, BadRequest,
                             TimedOut, ChatMigrated, NetworkError)
 import sys
@@ -11,7 +11,7 @@ import matplotlib as mpl
 from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg, building_msg, houses_arr
-from classes import filt_integers, filt_call_err, filt_flood, filt_fuck#, filt_commands
+from classes import filt_integers, filt_call_err, filt_flood, filt_fuck, filt_open_data_ua_bot
 from config import log
 from functools import wraps
 
@@ -490,12 +490,6 @@ def show_section(bot, update, some_section=False):
     update.callback_query.answer()
 
 
-# def call_err(bot, update):
-#     """temporary for testing errors"""
-#     bot.sendMessage(chat_id=3680016, text='called err')
-#     raise TimedOut
-
-
 def catch_err(bot, update, error):
     """handle all telegram errors end send report. There is no 'update' so can't logging much info"""
     user_id = update.effective_user.id if update else 'no update'
@@ -528,6 +522,18 @@ def del_msg(bot, update):
     bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
+@run_async
+def del_msg_perform(bot, update):
+    """Message handler for msg to delete. See filters in classes module. Running async"""
+    if update.effective_chat.type == 'private':
+        apartment_save(bot, update)
+        return
+    chat_id = update.message.chat_id
+    message_id = update.message.message_id
+    bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+    # time.sleep(20)
+
+
 def fuck_msg(bot, update):
     """message text handler for specific words. See filters in classes module"""
     if update.effective_chat.type == 'private':
@@ -545,14 +551,15 @@ def fuck_msg(bot, update):
     bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
+@run_async
 def greeting(bot, update):
-    """handle new chat members, and sent greeting message"""
+    """handle new chat members, and sent greeting message. Delete after delay. Running async"""
     chat_id = update.message.chat_id
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
-    update.message.reply_text(text=text)
+    deleted_msg = update.message.reply_text(text=text)
     # deleted_msg = update.message.reply_text(text=text)
-    # time.sleep(15)
-    # bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
+    time.sleep(60*5)
+    bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
 def prepare_data():
@@ -738,10 +745,9 @@ def main():
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
 
-    # dispatcher.add_handler(MessageHandler(filt_call_err, make_bars))
+    dispatcher.add_handler(MessageHandler(filt_open_data_ua_bot, del_msg_perform))
     dispatcher.add_handler(MessageHandler(filt_fuck, fuck_msg))
-    dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
-    
+    # dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
 
     dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
     dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
