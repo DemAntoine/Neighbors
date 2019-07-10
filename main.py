@@ -549,9 +549,10 @@ def greeting(bot, update):
     """handle new chat members, and sent greeting message"""
     chat_id = update.message.chat_id
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
-    deleted_msg = update.message.reply_text(text=text)
-    time.sleep(15)
-    bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
+    update.message.reply_text(text=text)
+    # deleted_msg = update.message.reply_text(text=text)
+    # time.sleep(15)
+    # bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
 def prepare_data():
