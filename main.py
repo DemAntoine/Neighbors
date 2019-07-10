@@ -11,7 +11,7 @@ import matplotlib as mpl
 from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg, building_msg, houses_arr
-from classes import filt_integers, filt_call_err, filt_flood, filt_fuck
+from classes import filt_integers, filt_call_err, filt_flood, filt_fuck#, filt_commands
 from config import log
 from functools import wraps
 
@@ -68,6 +68,7 @@ def is_changed(update):
 def start_command(bot, update):
     """handle /start command"""
     log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    del_command(bot, update)
     is_changed(update)
     if update.callback_query:
         update.callback_query.answer()
@@ -78,6 +79,7 @@ def start_command(bot, update):
 def help_command(bot, update):
     """handle /help command"""
     log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    del_command(bot, update)
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -88,6 +90,7 @@ def help_command(bot, update):
 def about_command(bot, update):
     """handle /about command"""
     log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    del_command(bot, update)
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -378,6 +381,8 @@ def msg_handler(bot, update):
 def apartment_save(bot, update):
     """integer text handler"""
     log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    if update.effective_chat.type != 'private':
+        return
     user_mode = Show.get(user_id=update.effective_user.id)
     text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
     if user_mode.msg_apart_mode:
@@ -709,11 +714,23 @@ def notifications_save(bot, update):
     update.callback_query.answer()
 
 
+def del_command(bot, update):
+    """for deleting commands in group chat. Call in any command handlers, to check if command sent in group.
+    If so - delete message from group chat
+    """
+    if update.effective_chat.type != 'private':
+        chat_id = update.message.chat_id
+        message_id = update.message.message_id
+    
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+
+
 def main():
     updater = Updater(KEY)
 
     dispatcher = updater.dispatcher
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
+    
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
@@ -721,6 +738,7 @@ def main():
     # dispatcher.add_handler(MessageHandler(filt_call_err, make_bars))
     dispatcher.add_handler(MessageHandler(filt_fuck, fuck_msg))
     dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
+    
 
     dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
     dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
