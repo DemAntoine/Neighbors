@@ -108,16 +108,6 @@ def building(bot, update):
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
 
 
-def user_created_report(bot, update, created_user, text):
-    """when created new, or updated user - send report-message for admins"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
-    if created_user.user_id in [3680016, 848451586, 113471434]:
-        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    else:
-        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-
-
 def new_neighbor_report(bot, update, created_user):
     """Send message for users who enabled notifications"""
     log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
@@ -365,7 +355,7 @@ def set_apartment_kbd(bot, update):
 
 def msg_handler(bot, update):
     """handle all text msg except other filters do"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username} {update.message.chat_id}')
     msg = update.message.text
     if update.effective_chat.type != 'private':
         return
@@ -376,6 +366,30 @@ def msg_handler(bot, update):
                   caption=f'Я ще не розумію людської мови, але вчусь, і скоро буду розуміть деякі слова і фрази\n'
                   f'Краще скористайтесь меню')
     log.info(f'id: {update.effective_user.id} username: {update.effective_user.username} text: {msg}')
+
+
+def jubilee():
+    """Check if new added user is 'hero of the day' i.e some round number in db"""
+    query = User.select().where(User.house, User.section)
+    if query.count() == 250:
+        # bot.sendMessage(chat_id=)
+        pass
+    elif query.where(User.house == 1).count() == 100:
+        # some action here
+        pass
+    elif query.where(User.house == 2).count() == 100:
+        # some action here
+        pass
+
+
+def user_created_report(bot, update, created_user, text):
+    """when created new, or updated user - send report-message for admins"""
+    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    if created_user.user_id in [3680016, 848451586, 113471434]:
+        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    else:
+        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
 
 
 def apartment_save(bot, update):
@@ -558,8 +572,8 @@ def greeting(bot, update):
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
     deleted_msg = update.message.reply_text(text=text)
     # deleted_msg = update.message.reply_text(text=text)
-    time.sleep(60*5)
-    bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
+    # time.sleep(60*5)
+    # bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
 
 
 def prepare_data():
