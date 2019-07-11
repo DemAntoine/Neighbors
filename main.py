@@ -12,7 +12,7 @@ from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg, building_msg, houses_arr
 from classes import filt_integers, filt_call_err, filt_flood, filt_fuck, filt_open_data_ua_bot
-from config import log
+from config import log, log_msg
 from functools import wraps
 
 KEY = sys.argv[1]
@@ -21,13 +21,11 @@ print('key ...' + KEY[-6:] + ' successfully used')
 
 def send_typing_action(func):
     """Sends typing action while processing func command."""
-
     @wraps(func)
     def command_func(*args, **kwargs):
         bot, update = args
         bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.UPLOAD_DOCUMENT)
         return func(bot, update, **kwargs)
-
     return command_func
 
 
@@ -41,7 +39,7 @@ def chosen_owns(update):
 
 
 def is_changed(update):
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     # check if user exist in DB (both tables). If not - create
     username = update.effective_user.username
     user_id = update.effective_user.id
@@ -67,18 +65,17 @@ def is_changed(update):
 
 def start_command(bot, update):
     """handle /start command"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     del_command(bot, update)
     is_changed(update)
     if update.callback_query:
         update.callback_query.answer()
-
     menu_kbd(bot, update)
 
 
 def help_command(bot, update):
     """handle /help command"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     del_command(bot, update)
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
@@ -89,7 +86,7 @@ def help_command(bot, update):
 
 def about_command(bot, update):
     """handle /about command"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     del_command(bot, update)
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
@@ -99,8 +96,8 @@ def about_command(bot, update):
 
 
 def building(bot, update):
-    """callbackQuery pattern ^building$"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    """CallbackQueryHandler. pattern ^building$"""
+    log.info(log_msg(update))
     update.callback_query.answer()
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -110,13 +107,14 @@ def building(bot, update):
 
 def new_neighbor_report(bot, update, created_user):
     """Send message for users who enabled notifications"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     
     # query for users who set notifications as _notify_house
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_house')
     query_users = User.select(User.user_id).where(User.house == created_user.house)
     query = query_params & query_users
     
+    # prevent telegram blocking spam
     for i, user in enumerate(query):
         if i // 29 == 0:
             time.sleep(1)
@@ -135,7 +133,7 @@ def new_neighbor_report(bot, update, created_user):
 
 def menu_kbd(bot, update):
     """show keyboard to chose: show neighbors or edit own info"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     if User.get(user_id=update.effective_user.id).house and User.get(user_id=update.effective_user.id).section:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
@@ -156,7 +154,7 @@ def menu_kbd(bot, update):
 
 def check_owns(bot, update):
     """check how many records for user in db"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     if not len(User.select().where(User.user_id == update.effective_user.id)) > 1:
         if update.callback_query.data == 'house_neighbors':
             show_house(bot, update)
@@ -179,7 +177,7 @@ def check_owns(bot, update):
 
 def select_owns(bot, update):
     """if user have more than 1 records in db, select which one to show/edit"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     if update.callback_query.data == 'house_neighbors':
         text = 'Сусіди по якому будинку ? :'
         view_edit = 'view_my_house'
@@ -200,7 +198,7 @@ def select_owns(bot, update):
 
 def owns_selected(bot, update):
     """save params to db"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     view_edit = update.callback_query.data[-13:]
     owns = [s for s in list(update.callback_query.data) if s.isdigit()]
     owns = int(''.join(owns))
@@ -221,7 +219,7 @@ def owns_selected(bot, update):
 
 def houses_kbd(bot, update):
     """show keyboard to chose house to show"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='p_h1'),
                  InlineKeyboardButton('Будинок 2', callback_data='p_h2')],
                 [InlineKeyboardButton('Будинок 3', callback_data='p_h3'),
@@ -233,7 +231,7 @@ def houses_kbd(bot, update):
 
 def section_kbd(bot, update):
     """callbackQuery from houses_kbd(). show keyboard to chose section to show"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     user_query = Show.get(user_id=update.effective_user.id)
     user_query.house = int(update.callback_query.data[3])
     user_query.save()
@@ -256,7 +254,7 @@ def section_kbd(bot, update):
 
 def save_params(bot, update):
     """callbackQuery from section_kbd(). save params to db table"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     user_query = Show.get(user_id=update.effective_user.id)
     user_query.section = int(update.callback_query.data[3])
     user_query.save()
@@ -267,7 +265,7 @@ def save_params(bot, update):
 
 def set_houses_kbd(bot, update, text=''):
     """show keyboard to chose its own house"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     if not User.get(user_id=update.effective_user.id).house:
         text = text
     elif len(User.select().where(User.user_id == update.effective_user.id)) > 1:
@@ -286,7 +284,7 @@ def set_houses_kbd(bot, update, text=''):
 
 def set_section_kbd(bot, update):
     """callbackQuery from set_houses_kbd(). show keyboard to chose its own section"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     user = chosen_owns(update)
     user.house = int(update.callback_query.data[2])
     user.save()
@@ -310,7 +308,7 @@ def set_section_kbd(bot, update):
 
 def set_floor_kbd(bot, update):
     """callbackQuery from set_section_kbd(). show keyboard to chose its own floor"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     user = chosen_owns(update)
     user.section = int(update.callback_query.data[2])
     user.save()
@@ -334,7 +332,7 @@ def set_floor_kbd(bot, update):
 
 def set_apartment_kbd(bot, update):
     """func show message with ask to tell its own appartment"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     floor = [s for s in list(update.callback_query.data) if s.isdigit()]
     floor = int(''.join(floor))
 
@@ -355,9 +353,9 @@ def set_apartment_kbd(bot, update):
 
 def msg_handler(bot, update):
     """handle all text msg except other filters do"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
     msg = update.message.text
     if update.effective_chat.type != 'private':
+        log.info(log_msg(update) + f'chat_id: {update.message.chat_id}')
         return
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -365,36 +363,50 @@ def msg_handler(bot, update):
                   reply_markup=reply_markup,
                   caption=f'Я ще не розумію людської мови, але вчусь, і скоро буду розуміть деякі слова і фрази\n'
                   f'Краще скористайтесь меню')
-    log.info(f'id: {update.effective_user.id} username: {update.effective_user.username} text: {msg}')
+    log.info(log_msg(update) + f'text: {msg}')
 
 
-def jubilee():
+def jubilee(bot, update, created_user):
     """Check if new added user is 'hero of the day' i.e some round number in db"""
+    log.info(log_msg(update))
+    
+    # celebration_count = [i for i in range(100,1000,50)]
+    celebration_count = [i for i in range(0, 1000, 50)]
+    
     query = User.select().where(User.house, User.section)
-    if query.count() == 250:
-        # bot.sendMessage(chat_id=-1001307649156)
-        pass
-    elif query.where(User.house == 1).count() == 100:
-        # bot.sendMessage(chat_id=-1001307649156)
-        pass
-    elif query.where(User.house == 2).count() == 100:
-        # bot.sendMessage(chat_id=-1001307649156)
-        pass
+    
+    text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
+    
+    if query.count() in celebration_count:
+        text = f'Вже зареєстровано {query.count()} ' + text
+        
+    elif query.where(User.house == 1).count() in celebration_count:
+        text = f'В першому будинку вже зареєстровано {query.where(User.house == 1).count()} ' + text
+        
+    elif query.where(User.house == 2).count() in celebration_count:
+        text = f'В другому будинку вже зареєстровано {query.where(User.house == 2).count()} ' + text
+    
+    else:
+        return
+    
+    # bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML) # test chat
+    bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
 
 
 def user_created_report(bot, update, created_user, text):
     """when created new, or updated user - send report-message for admins"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     if created_user.user_id in [3680016, 848451586, 113471434]:
         bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
     else:
         bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
         bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    jubilee(bot, update, created_user)    
 
 
 def apartment_save(bot, update):
     """integer text handler"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     if update.effective_chat.type != 'private':
         return
     user_mode = Show.get(user_id=update.effective_user.id)
@@ -419,7 +431,7 @@ def apartment_save(bot, update):
 
 def save_user_data(bot, update):
     """callbackQuery from reject. save user data"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     user = chosen_owns(update)
     if not user.updated:
         text = 'В базе СОЗДАН пользователь:\n'
@@ -447,7 +459,7 @@ def save_user_data(bot, update):
 
 def show_house(bot, update):
     """callbackQuery handler """
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -482,7 +494,7 @@ def show_house(bot, update):
 
 def show_section(bot, update, some_section=False):
     """Here need some documentation"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -539,8 +551,8 @@ def del_msg(bot, update):
 @run_async
 def del_msg_perform(bot, update):
     """Message handler for msg to delete. See filters in classes module. Running async"""
+    log.info(log_msg(update))
     if update.effective_chat.type == 'private':
-        apartment_save(bot, update)
         return
     chat_id = update.message.chat_id
     message_id = update.message.message_id
@@ -568,6 +580,7 @@ def fuck_msg(bot, update):
 @run_async
 def greeting(bot, update):
     """handle new chat members, and sent greeting message. Delete after delay. Running async"""
+    log.info(log_msg(update))
     chat_id = update.message.chat_id
     text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
     deleted_msg = update.message.reply_text(text=text)
@@ -583,7 +596,9 @@ def prepare_data():
     query_with = query.where(User.house, User.section)
     query_without = query.where(User.house.is_null() | User.section.is_null())
     houses = query_with.select(User.house).distinct().order_by(User.house)
-
+    
+    # did users indicate their info
+    introduced = {'Yes': query_with.count(), 'No': query_without.count()}
     # last 3 joined users
     last_3_users = list(reversed(query_with.order_by(User.id)[-3:]))
 
@@ -603,20 +618,20 @@ def prepare_data():
         bars_values[house_.house] = section_dict
 
     show_list = (f'<b>Всього користувачів: {query.count()}</b>\n'
-                 f'<i>Дані вказані {query_with.count()}</i>\n'
-                 f'<i>Дані не вказані {query_without.count()}</i>\n'
+                 f'<i>Дані вказані {introduced["Yes"]}</i>\n'
+                 f'<i>Дані не вказані {introduced["No"]}</i>\n'
                  + '{}' * len(neighbors)).format(*neighbors) + '\n<b>Нові користувачі</b>'
 
     # add to msg last 3 joined users
     for i in range(len(last_3_users)):
         show_list += f'\n{last_3_users[i].joined_str()}'
 
-    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values}
+    return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values, 'introduced': introduced}
 
 
 def statistics(bot, update):
     """callbackQuery handler. pattern:^statistics$"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu'),
                  InlineKeyboardButton('Графіка', callback_data='charts')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -631,9 +646,7 @@ def statistics(bot, update):
 def make_pie(prepared_data):
     """create pie total by houses"""
     log.info('this func has no update')
-    values = prepared_data['pie_values']
-    labels = [f'Буд. {i + 1}' for i in range(len(values))]
-
+    
     # func for setting values format on pie
     def make_autopct(values):
         def my_autopct(pct):
@@ -642,6 +655,10 @@ def make_pie(prepared_data):
             return val
 
         return my_autopct
+    
+    # pie by house    
+    values = prepared_data['pie_values']
+    labels = [f'Буд. {i + 1}' for i in range(len(values))]
 
     fig = plt.figure(figsize=(10, 7))
     mpl.rcParams.update({'font.size': 20})
@@ -652,7 +669,22 @@ def make_pie(prepared_data):
     fig.savefig(img_path)
     plt.clf()
     plt.close()
+    
+    # pie by introduced
+    values = list(prepared_data['introduced'].values())
+    labels = list(prepared_data['introduced'].keys())
 
+    fig = plt.figure(figsize=None)
+    mpl.rcParams.update({'font.size': 16})
+    plt.title('Користувачі вказали свої дані', pad=15)
+    plt.pie(values, autopct=make_autopct(values), radius=1.3, pctdistance=0.8,
+            shadow=True, labels=labels, labeldistance=1.05)
+
+    img_path = os.path.join('img', 'pie_introduced.png')
+    fig.savefig(img_path)
+    plt.clf()
+    plt.close()
+    
 
 def make_bars(prepared_data):
     """create bars for houses sections count"""
@@ -687,7 +719,7 @@ def make_bars(prepared_data):
 @send_typing_action
 def charts(bot, update):
     """callbackQuery handler. pattern:^charts$. Show chart"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -696,7 +728,7 @@ def charts(bot, update):
     make_bars(prepared_data)
     update.callback_query.answer()
 
-    media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb'))]
+    media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb')), InputMediaPhoto(open(os.path.join('img', 'pie_introduced.png'), 'rb'))]
     media += [InputMediaPhoto(open(os.path.join('img', f'bar{i}.png'), 'rb')) for i in range(1, 5)]
     
     bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
@@ -707,7 +739,7 @@ def charts(bot, update):
 
 def notifications_kbd(bot, update):
     """callbackQuery handler. pattern:^notifications$. Show notifications keyboard settings"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     keyboard = [[InlineKeyboardButton('В моєму будинку 🏠', callback_data='_notify_house')],
                 [InlineKeyboardButton('В моїй секції 🔢', callback_data='_notify_section')],
                 [InlineKeyboardButton('Вимкнути сповіщення 🔕', callback_data='_notify_OFF')]]
@@ -725,7 +757,7 @@ def notifications_kbd(bot, update):
 
 def notifications_save(bot, update):
     """callbackQuery handler. pattern: from notifications_kbd func. Save notifications settings to db"""
-    log.info(f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}')
+    log.info(log_msg(update))
     
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -742,10 +774,10 @@ def del_command(bot, update):
     """for deleting commands in group chat. Call in any command handlers, to check if command sent in group.
     If so - delete message from group chat
     """
+    log.info(log_msg(update))
     if update.effective_chat.type != 'private':
         chat_id = update.message.chat_id
         message_id = update.message.message_id
-    
         bot.deleteMessage(chat_id=chat_id, message_id=message_id)
 
 
