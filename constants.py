@@ -82,6 +82,12 @@ building_msg = '''
 Відкриваєм @OpenDataUABot, вводим номер справи <b>910/3435/17, 826/16071/18</b> і отримуєм всю актуальную інформацію по засіданням, рішенням і т.д.
 '''
 
+greeting_msg = '''
+Вітаю {}! Давайте знайомитись,
+додайтесь до списку сусідів в @cm_susid_bot,
+та прочитайте <a href="https://telegra.ph/Vazhno-06-06">важливу інформацію</a> для новачків.
+'''
+
 house_1 = {
     'section_1': [i for i in range(1, 15)] + ['12-13', '13-14'],
     'section_2': [i for i in range(1, 17)] + ['14-15', '15-16'],
@@ -117,8 +123,8 @@ house_4 = {
 }
 
 houses_arr = {
-    'house_1': house_1, 
+    'house_1': house_1,
     'house_2': house_2,
-    'house_3': house_3, 
+    'house_3': house_3,
     'house_4': house_4,
 }

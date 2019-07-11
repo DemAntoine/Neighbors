@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from datetime import datetime
 from models import User, Show
-from constants import help_msg, about_msg, building_msg, houses_arr
+from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
 from classes import filt_integers, filt_call_err, filt_flood, filt_fuck, filt_open_data_ua_bot
 from config import log, log_msg
 from functools import wraps
@@ -355,7 +355,7 @@ def msg_handler(bot, update):
     """handle all text msg except other filters do"""
     msg = update.message.text
     if update.effective_chat.type != 'private':
-        log.info(log_msg(update) + f'chat_id: {update.message.chat_id}')
+        log.info(log_msg(update) + f' chat_id: {update.message.chat_id}')
         return
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -581,9 +581,10 @@ def fuck_msg(bot, update):
 def greeting(bot, update):
     """handle new chat members, and sent greeting message. Delete after delay. Running async"""
     log.info(log_msg(update))
+    new_member_name = update.message.from_user.full_name
     chat_id = update.message.chat_id
-    text = 'Вітаємо в групі. Хорошим тоном буде представитися, вказавши свої дані в боті @cm_susid_bot'
-    deleted_msg = update.message.reply_text(text=text)
+    text = greeting_msg.format(new_member_name)
+    deleted_msg = update.message.reply_text(text=text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     # deleted_msg = update.message.reply_text(text=text)
     # time.sleep(60*5)
     # bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
