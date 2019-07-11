@@ -31,13 +31,6 @@ class MyFilters(BaseFilter):
             return found if found else False
 
     @staticmethod
-    def bots_commands(message):
-        pattern = r'\bхуй\w{,4}\b|\bп.зда\w{,4}\b'
-        if message.text:
-            found = re.findall(pattern, message.text, flags=re.IGNORECASE)
-            return found if found else False
-
-    @staticmethod
     # block forwarding msg from specific users
     def open_data_ua_bot(message):
         if message.forward_from:
