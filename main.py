@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, InputMediaPhoto, ChatAction
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters, run_async
-from telegram.error import (TelegramError, Unauthorized, BadRequest,
-                            TimedOut, ChatMigrated, NetworkError)
+from telegram.error import (TelegramError, Unauthorized, BadRequest, TimedOut, NetworkError)
 import sys
 import os
 import time
@@ -11,7 +10,7 @@ import matplotlib as mpl
 from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
-from classes import filt_integers, filt_call_err, filt_flood, filt_fuck, filt_open_data_ua_bot
+from classes import filt_integers, filt_call_err, filt_flood, filt_fuck
 from config import log, log_msg
 from functools import wraps
 
@@ -66,7 +65,6 @@ def is_changed(update):
 def start_command(bot, update):
     """handle /start command"""
     log.info(log_msg(update))
-    del_command(bot, update)
     is_changed(update)
     if update.callback_query:
         update.callback_query.answer()
@@ -76,7 +74,6 @@ def start_command(bot, update):
 def help_command(bot, update):
     """handle /help command"""
     log.info(log_msg(update))
-    del_command(bot, update)
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -87,7 +84,6 @@ def help_command(bot, update):
 def about_command(bot, update):
     """handle /about command"""
     log.info(log_msg(update))
-    del_command(bot, update)
     is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -108,27 +104,30 @@ def building(bot, update):
 def new_neighbor_report(bot, update, created_user):
     """Send message for users who enabled notifications"""
     log.info(log_msg(update))
-    
+
     # query for users who set notifications as _notify_house
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_house')
     query_users = User.select(User.user_id).where(User.house == created_user.house)
     query = query_params & query_users
-    
+
     # prevent telegram blocking spam
     for i, user in enumerate(query):
         if i // 29 == 0:
             time.sleep(1)
-        bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML, text=f'Новий сусід\n{created_user.joined_str()}')
-    
+        bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
+                        text=f'Новий сусід\n{created_user.joined_str()}')
+
     # query for users who set notifications as _notify_section    
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_section')
-    query_users = User.select(User.user_id).where(User.house == created_user.house, User.section == created_user.section)
+    query_users = User.select(User.user_id).where(User.house == created_user.house,
+                                                  User.section == created_user.section)
     query = query_params & query_users
-    
+
     for i, user in enumerate(query):
         if i // 29 == 0:
             time.sleep(1)
-        bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML, text=f'Новий сусід\n{created_user.joined_str()}')
+        bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
+                        text=f'Новий сусід\n{created_user.joined_str()}')
 
 
 def menu_kbd(bot, update):
@@ -141,7 +140,7 @@ def menu_kbd(bot, update):
                     [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')],
                     [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
                      InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
-                     [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')]]
+                    [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')]]
     else:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
@@ -353,10 +352,10 @@ def set_apartment_kbd(bot, update):
 
 def msg_handler(bot, update):
     """handle all text msg except other filters do"""
-    msg = update.message.text
     if update.effective_chat.type != 'private':
         log.info(log_msg(update) + f' chat_id: {update.message.chat_id}')
         return
+    msg = update.message.text
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'maybe.jpg'), 'rb'),
@@ -369,26 +368,26 @@ def msg_handler(bot, update):
 def jubilee(bot, update, created_user):
     """Check if new added user is 'hero of the day' i.e some round number in db"""
     log.info(log_msg(update))
-    
+
     # celebration_count = [i for i in range(100,1000,50)]
     celebration_count = [i for i in range(0, 1000, 50)]
-    
+
     query = User.select().where(User.house, User.section)
-    
+
     text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
-    
+
     if query.count() in celebration_count:
         text = f'Вже зареєстровано {query.count()} ' + text
-        
+
     elif query.where(User.house == 1).count() in celebration_count:
         text = f'В першому будинку вже зареєстровано {query.where(User.house == 1).count()} ' + text
-        
+
     elif query.where(User.house == 2).count() in celebration_count:
         text = f'В другому будинку вже зареєстровано {query.where(User.house == 2).count()} ' + text
-    
+
     else:
         return
-    
+
     # bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML) # test chat
     bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
 
@@ -401,7 +400,7 @@ def user_created_report(bot, update, created_user, text):
     else:
         bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
         bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    jubilee(bot, update, created_user)    
+    jubilee(bot, update, created_user)
 
 
 def apartment_save(bot, update):
@@ -427,7 +426,7 @@ def apartment_save(bot, update):
         user_created_report(bot, update, created_user=user, text=text)
         new_neighbor_report(bot, update, created_user=user)
         start_command(bot, update)
-        
+
 
 def save_user_data(bot, update):
     """callbackQuery from reject. save user data"""
@@ -453,7 +452,7 @@ def save_user_data(bot, update):
     new_neighbor_report(bot, update, created_user=user)
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
-    
+
     start_command(bot, update)
 
 
@@ -597,7 +596,7 @@ def prepare_data():
     query_with = query.where(User.house, User.section)
     query_without = query.where(User.house.is_null() | User.section.is_null())
     houses = query_with.select(User.house).distinct().order_by(User.house)
-    
+
     # did users indicate their info
     introduced = {'Yes': query_with.count(), 'No': query_without.count()}
     # last 3 joined users
@@ -647,7 +646,7 @@ def statistics(bot, update):
 def make_pie(prepared_data):
     """create pie total by houses"""
     log.info('this func has no update')
-    
+
     # func for setting values format on pie
     def make_autopct(values):
         def my_autopct(pct):
@@ -656,7 +655,7 @@ def make_pie(prepared_data):
             return val
 
         return my_autopct
-    
+
     # pie by house    
     values = prepared_data['pie_values']
     labels = [f'Буд. {i + 1}' for i in range(len(values))]
@@ -670,7 +669,7 @@ def make_pie(prepared_data):
     fig.savefig(img_path)
     plt.clf()
     plt.close()
-    
+
     # pie by introduced
     values = list(prepared_data['introduced'].values())
     labels = list(prepared_data['introduced'].keys())
@@ -685,7 +684,7 @@ def make_pie(prepared_data):
     fig.savefig(img_path)
     plt.clf()
     plt.close()
-    
+
 
 def make_bars(prepared_data):
     """create bars for houses sections count"""
@@ -710,7 +709,7 @@ def make_bars(prepared_data):
         ax = plt.gca()
         ax.set_title(f'Будинок {house}')
         autolabel(ax.patches, height_factor=0.85)
-        
+
         img_path = os.path.join('img', f'bar{house}.png')
         plt.savefig(img_path, dpi=200)
         plt.clf()
@@ -723,17 +722,18 @@ def charts(bot, update):
     log.info(log_msg(update))
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     prepared_data = prepare_data()
     make_pie(prepared_data)
     make_bars(prepared_data)
     update.callback_query.answer()
 
-    media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb')), InputMediaPhoto(open(os.path.join('img', 'pie_introduced.png'), 'rb'))]
+    media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb')),
+             InputMediaPhoto(open(os.path.join('img', 'pie_introduced.png'), 'rb'))]
     media += [InputMediaPhoto(open(os.path.join('img', f'bar{i}.png'), 'rb')) for i in range(1, 5)]
-    
+
     bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
-    
+
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup, text='Повернутись в меню:')
 
@@ -745,7 +745,7 @@ def notifications_kbd(bot, update):
                 [InlineKeyboardButton('В моїй секції 🔢', callback_data='_notify_section')],
                 [InlineKeyboardButton('Вимкнути сповіщення 🔕', callback_data='_notify_OFF')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     user = Show.get(user_id=update.effective_user.id)
     _dict = {None: 'Вимкнено', '_notify_OFF': 'Вимкнено',
              '_notify_section': 'В моїй секції 🔢', '_notify_house': 'В моєму будинку 🏠'}
@@ -759,10 +759,10 @@ def notifications_kbd(bot, update):
 def notifications_save(bot, update):
     """callbackQuery handler. pattern: from notifications_kbd func. Save notifications settings to db"""
     log.info(log_msg(update))
-    
+
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     user = Show.get(user_id=update.effective_user.id)
     user.notification_mode = update.callback_query.data
     user.save()
@@ -772,14 +772,21 @@ def notifications_save(bot, update):
 
 
 def del_command(bot, update):
-    """for deleting commands in group chat. Call in any command handlers, to check if command sent in group.
-    If so - delete message from group chat
+    """For deleting commands sent in group chat. MessageHandler(Filters.command & Filters.group).
+    If so - delete message from group chat.
     """
-    log.info(log_msg(update))
-    if update.effective_chat.type != 'private':
-        chat_id = update.message.chat_id
-        message_id = update.message.message_id
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+    command = update.message.text
+    log.info(log_msg(update) + f' DEL {command}')
+    commands = {'/start': start_command,
+                '/help': help_command,
+                '/about': about_command}
+    try:
+        commands[update.message.text](bot, update)
+    except KeyError:
+        pass
+    chat_id = update.message.chat_id
+    message_id = update.message.message_id
+    bot.deleteMessage(chat_id=chat_id, message_id=message_id)
 
 
 def main():
@@ -787,12 +794,14 @@ def main():
 
     dispatcher = updater.dispatcher
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
-    
+
+    dispatcher.add_handler(MessageHandler((Filters.command & Filters.group), del_command))
+
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
 
-    dispatcher.add_handler(MessageHandler(filt_open_data_ua_bot, del_msg_perform))
+    # dispatcher.add_handler(MessageHandler(filt_open_data_ua_bot, del_msg_perform))
     dispatcher.add_handler(MessageHandler(filt_fuck, fuck_msg))
     # dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
 
