@@ -19,6 +19,10 @@ def customTime(*args):
     return converted.timetuple()
 
 
+def log_msg(update):
+    return f'id: {update.effective_user.id} name: {update.effective_user.full_name}-{update.effective_user.username}'
+
+
 log = logging.getLogger()
 # set custom timezone for logging
 logging.Formatter.converter = customTime
