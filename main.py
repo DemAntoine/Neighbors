@@ -5,14 +5,16 @@ from telegram.error import (TelegramError, Unauthorized, BadRequest, TimedOut, N
 import sys
 import os
 import time
+import re
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
-from classes import filt_integers, filt_call_err, filt_flood, filt_fuck
+from classes import filt_integers, filt_call_err, filt_flood, filt_fuck, block_filter
 from config import log, log_msg
 from functools import wraps
+
 
 KEY = sys.argv[1]
 print('key ...' + KEY[-6:] + ' successfully used')
@@ -74,7 +76,6 @@ def start_command(bot, update):
 def help_command(bot, update):
     """handle /help command"""
     log.info(log_msg(update))
-    is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text=help_msg, parse_mode=ParseMode.HTML,
@@ -84,7 +85,6 @@ def help_command(bot, update):
 def about_command(bot, update):
     """handle /about command"""
     log.info(log_msg(update))
-    is_changed(update)
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text=about_msg,
@@ -352,9 +352,6 @@ def set_apartment_kbd(bot, update):
 
 def msg_handler(bot, update):
     """handle all text msg except other filters do"""
-    if update.effective_chat.type != 'private':
-        log.info(log_msg(update) + f' chat_id: {update.message.chat_id}')
-        return
     msg = update.message.text
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -362,7 +359,13 @@ def msg_handler(bot, update):
                   reply_markup=reply_markup,
                   caption=f'Я ще не розумію людської мови, але вчусь, і скоро буду розуміть деякі слова і фрази\n'
                   f'Краще скористайтесь меню')
-    log.info(log_msg(update) + f'text: {msg}')
+    log.info(log_msg(update) + f' text: {msg}')
+
+
+def group_chat_logging(bot, update):
+    """handle text msgs in group chat. MessageHandler((Filters.text & Filters.group)"""
+    # to do: create separate logger to log messages from group
+    log.info(log_msg(update))
 
 
 def jubilee(bot, update, created_user):
@@ -406,8 +409,6 @@ def user_created_report(bot, update, created_user, text):
 def apartment_save(bot, update):
     """integer text handler"""
     log.info(log_msg(update))
-    if update.effective_chat.type != 'private':
-        return
     user_mode = Show.get(user_id=update.effective_user.id)
     text_success = '<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?'
     if user_mode.msg_apart_mode:
@@ -528,52 +529,22 @@ def catch_err(bot, update, error):
         bot.sendMessage(chat_id=3680016, text=f'ERROR:\n {error}\n type {type(error)} id: {user_id}')
 
 
-def del_msg(bot, update):
-    """message text handler for specific words. See filters in classes module"""
-    if update.effective_chat.type == 'private':
-        apartment_save(bot, update)
-        return
-
-    chat_id = update.message.chat_id
-    message_id = update.message.message_id
-    pattern = filt_flood(update.message)
-    warn_msg = f'Сообщения <code>{pattern}</code> удаляются автоматически'
-
-    bot.deleteMessage(chat_id=chat_id, message_id=message_id)
-    deleted_msg = bot.sendMessage(chat_id=chat_id, parse_mode=ParseMode.HTML, text=warn_msg)
-
-    time.sleep(5)
-
-    bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
-
-
+# to do: apply to more then 1 custom filter
 @run_async
-def del_msg_perform(bot, update):
-    """Message handler for msg to delete. See filters in classes module. Running async"""
-    log.info(log_msg(update))
-    if update.effective_chat.type == 'private':
-        return
+def del_msg(bot, update):
+    """message text handler for specific words in group chats MessageHandler((Filters.group & block_filter).
+    See filters in classes module
+    """
     chat_id = update.message.chat_id
     message_id = update.message.message_id
-    bot.deleteMessage(chat_id=chat_id, message_id=message_id)
-    # time.sleep(20)
-
-
-def fuck_msg(bot, update):
-    """message text handler for specific words. See filters in classes module"""
-    if update.effective_chat.type == 'private':
-        apartment_save(bot, update)
-        return
-
-    chat_id = update.message.chat_id
-    message_id = update.message.message_id
-    pattern = filt_fuck(update.message)
-    warn_msg = f'Маты <code>{pattern}</code> удаляются автоматически'
+    pattern = block_filter(update.message)
+    warn_msg = f'Повідомлення які містять <code>{pattern}</code> видаляються автоматично'
 
     bot.deleteMessage(chat_id=chat_id, message_id=message_id)
     deleted_msg = bot.sendMessage(chat_id=chat_id, parse_mode=ParseMode.HTML, text=warn_msg)
     time.sleep(5)
     bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
+    log.info(log_msg(update) + f' {pattern}')
 
 
 @run_async
@@ -727,13 +698,13 @@ def charts(bot, update):
     make_pie(prepared_data)
     make_bars(prepared_data)
     update.callback_query.answer()
-
+    
+    # to do: replace with list of all files in folder. hint: count files in folder (see speechBot)
     media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb')),
              InputMediaPhoto(open(os.path.join('img', 'pie_introduced.png'), 'rb'))]
     media += [InputMediaPhoto(open(os.path.join('img', f'bar{i}.png'), 'rb')) for i in range(1, 5)]
 
     bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
-
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup, text='Повернутись в меню:')
 
@@ -775,13 +746,13 @@ def del_command(bot, update):
     """For deleting commands sent in group chat. MessageHandler(Filters.command & Filters.group).
     If so - delete message from group chat.
     """
-    command = update.message.text
+    command = re.sub(r'@.*', '', update.message.text)
     log.info(log_msg(update) + f' DEL {command}')
     commands = {'/start': start_command,
                 '/help': help_command,
                 '/about': about_command}
     try:
-        commands[update.message.text](bot, update)
+        commands[command](bot, update)
     except KeyError:
         pass
     chat_id = update.message.chat_id
@@ -793,17 +764,15 @@ def main():
     updater = Updater(KEY)
 
     dispatcher = updater.dispatcher
+    # group filters
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
-
     dispatcher.add_handler(MessageHandler((Filters.command & Filters.group), del_command))
-
+    dispatcher.add_handler(MessageHandler((Filters.group & block_filter), del_msg))
+    dispatcher.add_handler(MessageHandler((Filters.text & Filters.group), group_chat_logging))
+    
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
-
-    # dispatcher.add_handler(MessageHandler(filt_open_data_ua_bot, del_msg_perform))
-    dispatcher.add_handler(MessageHandler(filt_fuck, fuck_msg))
-    # dispatcher.add_handler(MessageHandler(filt_flood, del_msg))
 
     dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
     dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
