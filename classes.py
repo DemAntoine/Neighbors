@@ -42,3 +42,13 @@ filt_call_err = MyFilters().call_err
 filt_flood = MyFilters().flood
 filt_fuck = MyFilters().fuck
 # filt_open_data_ua_bot = MyFilters().open_data_ua_bot
+
+
+class FilterBlock(BaseFilter):
+    def filter(self, message):
+        pattern = r'\bхуй\w{,4}\b|\bп.зда\w{,4}\b'
+        if message.text:
+            found = re.findall(pattern, message.text, flags=re.IGNORECASE)
+            return found if found else False
+
+block_filter = FilterBlock()
