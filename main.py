@@ -94,11 +94,11 @@ def about_command(bot, update):
 def building(bot, update):
     """CallbackQueryHandler. pattern ^building$"""
     log.info(log_msg(update))
-    update.callback_query.answer()
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text=building_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
+    update.callback_query.answer()
 
 
 def new_neighbor_report(bot, update, created_user):
@@ -204,7 +204,6 @@ def owns_selected(bot, update):
     user = Show.get(user_id=update.effective_user.id)
     user.owns = owns
     user.save()
-    update.callback_query.answer()
 
     if view_edit == 'view_my_house':
         show_house(bot, update)
@@ -214,6 +213,7 @@ def owns_selected(bot, update):
         user = User.select().where(User.user_id == update.effective_user.id)[owns]
         text = 'Змінюємо Ваші дані:\n' + user.setting_str() + '\nВ якому Ви будинку ? 🏠 :'
         set_houses_kbd(bot, update, text)
+    update.callback_query.answer()
 
 
 def houses_kbd(bot, update):
@@ -258,9 +258,9 @@ def save_params(bot, update):
     user_query = Show.get(user_id=update.effective_user.id)
     user_query.section = int(update.callback_query.data[3])
     user_query.save()
-    update.callback_query.answer()
     some_section = True
     show_section(bot, update, some_section)
+    update.callback_query.answer()
 
 
 def set_houses_kbd(bot, update, text=''):
@@ -470,15 +470,12 @@ def show_house(bot, update):
     else:
         # if user want see own house and have one
         user_query = chosen_owns(update)
-
     neighbors = []
     sections = User.select(User.section).where(User.house == user_query.house).distinct().order_by(User.section)
-
     for i in sections:
         neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
         for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
             neighbors.append(str(user) + '\n')
-
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
@@ -489,7 +486,6 @@ def show_house(bot, update):
     #     part_1, part_2, part_3 = show_list.partition('<pre>       📭 Секція 4</pre>\n')
     #     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=part_1[:-2])
     #     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=part_2 + part_3)
-
     update.callback_query.answer()
 
 
@@ -607,12 +603,10 @@ def statistics(bot, update):
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu'),
                  InlineKeyboardButton('Графіка', callback_data='charts')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     show_list = prepare_data()['show_list']
-
-    update.callback_query.answer()
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
                     reply_markup=reply_markup)
+    update.callback_query.answer()
 
 
 def make_pie(prepared_data):
@@ -698,7 +692,6 @@ def charts(bot, update):
     prepared_data = prepare_data()
     make_pie(prepared_data)
     make_bars(prepared_data)
-    update.callback_query.answer()
     
     # to do: replace with list of all files in folder. hint: count files in folder (see speechBot)
     media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb')),
@@ -708,6 +701,7 @@ def charts(bot, update):
     bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup, text='Повернутись в меню:')
+    update.callback_query.answer()
 
 
 def notifications_kbd(bot, update):
@@ -717,15 +711,14 @@ def notifications_kbd(bot, update):
                 [InlineKeyboardButton('В моїй секції 🔢', callback_data='_notify_section')],
                 [InlineKeyboardButton('Вимкнути сповіщення 🔕', callback_data='_notify_OFF')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     user = Show.get(user_id=update.effective_user.id)
     _dict = {None: 'Вимкнено', '_notify_OFF': 'Вимкнено',
              '_notify_section': 'В моїй секції 🔢', '_notify_house': 'В моєму будинку 🏠'}
     text = f'Зараз сповіщення встановленні в режим\n' \
         f'<b>{_dict[user.notification_mode]}</b>\nОтримувати сповіщення коли з\'явиться новий сусід:'
-    update.callback_query.answer()
     bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                         text=text, reply_markup=reply_markup, message_id=update.effective_message.message_id)
+    update.callback_query.answer()
 
 
 def notifications_save(bot, update):
