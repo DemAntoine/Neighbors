@@ -249,6 +249,7 @@ def section_kbd(bot, update):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Яку секцію показати ? 🔢 :', reply_markup=reply_markup)
+    update.callback_query.answer()
 
 
 def save_params(bot, update):
