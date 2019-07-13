@@ -11,8 +11,8 @@ import matplotlib as mpl
 from datetime import datetime
 from models import User, Show
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
-from classes import filt_integers, filt_call_err, filt_flood, filt_fuck, block_filter
-from config import log, log_msg
+from classes import filt_integers, filt_call_err, block_filter
+from config import log, log_chat, log_msg
 from functools import wraps
 
 
@@ -376,8 +376,8 @@ def msg_handler(bot, update):
 
 def group_chat_logging(bot, update):
     """handle text msgs in group chat. MessageHandler((Filters.text & Filters.group)"""
-    # to do: create separate logger to log messages from group
-    log.info(log_msg(update))
+    msg = update.message.text
+    log_chat.info(log_msg(update) + f'msg: {msg}')
 
 
 def jubilee(bot, update, created_user):
