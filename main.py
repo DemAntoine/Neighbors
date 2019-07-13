@@ -76,8 +76,7 @@ def start_command(bot, update):
 def help_command(bot, update):
     """handle /help command"""
     log.info(log_msg(update))
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
     bot.sendMessage(chat_id=update.effective_user.id, text=help_msg, parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup)
 
@@ -85,8 +84,7 @@ def help_command(bot, update):
 def about_command(bot, update):
     """handle /about command"""
     log.info(log_msg(update))
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
     bot.sendMessage(chat_id=update.effective_user.id, text=about_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
 
@@ -94,8 +92,7 @@ def about_command(bot, update):
 def building(bot, update):
     """CallbackQueryHandler. pattern ^building$"""
     log.info(log_msg(update))
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
     bot.sendMessage(chat_id=update.effective_user.id, text=building_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
     update.callback_query.answer()
@@ -109,25 +106,41 @@ def new_neighbor_report(bot, update, created_user):
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_house')
     query_users = User.select(User.user_id).where(User.house == created_user.house)
     query = query_params & query_users
-
     # prevent telegram blocking spam
     for i, user in enumerate(query):
-        if i // 29 == 0:
+        if i % 29 == 0:
             time.sleep(1)
-        bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
-                        text=f'Новий сусід\n{created_user.joined_str()}')
+        try:
+            bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
+                            text=f'Новий сусід\n{created_user.joined_str()}')
+        except BadRequest as err:
+            bot.sendMessage(chat_id=3680016, text=f'failed to send notification for user {user.user_id} {err}',
+                            parse_mode=ParseMode.HTML)
 
     # query for users who set notifications as _notify_section    
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_section')
-    query_users = User.select(User.user_id).where(User.house == created_user.house,
-                                                  User.section == created_user.section)
+    query_users = query_users.where(User.section == created_user.section)
     query = query_params & query_users
-
     for i, user in enumerate(query):
-        if i // 29 == 0:
+        if i % 29 == 0:
             time.sleep(1)
-        bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
-                        text=f'Новий сусід\n{created_user.joined_str()}')
+        try:
+            bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
+                            text=f'Новий сусід\n{created_user.joined_str()}')
+        except BadRequest as err:
+            bot.sendMessage(chat_id=3680016, text=f'failed to send notification for user {user.user_id} {err}',
+                            parse_mode=ParseMode.HTML)
+
+
+def user_created_report(bot, update, created_user, text):
+    """when created new, or updated user - send report-message for admins"""
+    log.info(log_msg(update))
+    if created_user.user_id in [3680016, 848451586, 113471434]:
+        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    else:
+        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    jubilee(bot, update, created_user)
 
 
 def menu_kbd(bot, update):
@@ -278,7 +291,6 @@ def set_houses_kbd(bot, update, text=''):
                  InlineKeyboardButton('Будинок 4', callback_data='_h4')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-
     update.callback_query.answer()
 
 
@@ -354,8 +366,7 @@ def set_apartment_kbd(bot, update):
 def msg_handler(bot, update):
     """handle all text msg except other filters do"""
     msg = update.message.text
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
     bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'maybe.jpg'), 'rb'),
                   reply_markup=reply_markup,
                   caption=f'Я ще не розумію людської мови, але вчусь, і скоро буду розуміть деякі слова і фрази\n'
@@ -372,39 +383,26 @@ def group_chat_logging(bot, update):
 def jubilee(bot, update, created_user):
     """Check if new added user is 'hero of the day' i.e some round number in db"""
     log.info(log_msg(update))
-
-    # celebration_count = [i for i in range(100,1000,50)]
     celebration_count = [i for i in range(0, 1000, 50)]
-
     query = User.select().where(User.house, User.section)
-
     text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
 
     if query.count() in celebration_count:
         text = f'Вже зареєстровано {query.count()} ' + text
-
     elif query.where(User.house == 1).count() in celebration_count:
         text = f'В першому будинку вже зареєстровано {query.where(User.house == 1).count()} ' + text
-
     elif query.where(User.house == 2).count() in celebration_count:
         text = f'В другому будинку вже зареєстровано {query.where(User.house == 2).count()} ' + text
-
+    elif query.where(User.house == 3).count() in celebration_count:
+        text = f'В третьому будинку вже зареєстровано {query.where(User.house == 3).count()} ' + text
+    elif query.where(User.house == 4).count() in celebration_count:
+        text = f'В четвертому будинку вже зареєстровано {query.where(User.house == 4).count()} ' + text
     else:
         return
-
-    # bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML) # test chat
-    bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
-
-
-def user_created_report(bot, update, created_user, text):
-    """when created new, or updated user - send report-message for admins"""
-    log.info(log_msg(update))
-    if created_user.user_id in [3680016, 848451586, 113471434]:
-        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    else:
-        bot.sendMessage(chat_id=3680016, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
-    jubilee(bot, update, created_user)
+    try:
+        bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML) # test chat
+    except BadRequest:
+        bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
 
 
 def apartment_save(bot, update):
@@ -454,15 +452,13 @@ def save_user_data(bot, update):
     new_neighbor_report(bot, update, created_user=user)
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
-
     start_command(bot, update)
 
 
 def show_house(bot, update):
     """callbackQuery handler """
     log.info(log_msg(update))
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
 
     if update.callback_query.data == 'show_this_house':
         # if user want see selected house
@@ -492,8 +488,7 @@ def show_house(bot, update):
 def show_section(bot, update, some_section=False):
     """Here need some documentation"""
     log.info(log_msg(update))
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
 
     if not some_section:
         user_query = chosen_owns(update)
@@ -549,12 +544,8 @@ def greeting(bot, update):
     """handle new chat members, and sent greeting message. Delete after delay. Running async"""
     log.info(log_msg(update))
     new_member_name = update.message.from_user.full_name
-    chat_id = update.message.chat_id
     text = greeting_msg.format(new_member_name)
-    deleted_msg = update.message.reply_text(text=text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-    # deleted_msg = update.message.reply_text(text=text)
-    # time.sleep(60*5)
-    # bot.deleteMessage(chat_id=chat_id, message_id=deleted_msg.message_id)
+    update.message.reply_text(text=text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
 def prepare_data():
@@ -631,7 +622,7 @@ def make_pie(prepared_data):
     plt.pie(values, autopct=make_autopct(values), radius=1.5, pctdistance=0.8,
             shadow=True, labels=labels, labeldistance=1.05)
 
-    img_path = os.path.join('img', 'pie.png')
+    img_path = os.path.join('img', 'charts', '1_pie.png')
     fig.savefig(img_path)
     plt.clf()
     plt.close()
@@ -646,7 +637,7 @@ def make_pie(prepared_data):
     plt.pie(values, autopct=make_autopct(values), radius=1.3, pctdistance=0.8,
             shadow=True, labels=labels, labeldistance=1.05)
 
-    img_path = os.path.join('img', 'pie_introduced.png')
+    img_path = os.path.join('img', 'charts', '2_pie.png')
     fig.savefig(img_path)
     plt.clf()
     plt.close()
@@ -676,7 +667,7 @@ def make_bars(prepared_data):
         ax.set_title(f'Будинок {house}')
         autolabel(ax.patches, height_factor=0.85)
 
-        img_path = os.path.join('img', f'bar{house}.png')
+        img_path = os.path.join('img', 'charts', f'bar{house}.png')
         plt.savefig(img_path, dpi=200)
         plt.clf()
         plt.close()
@@ -686,17 +677,14 @@ def make_bars(prepared_data):
 def charts(bot, update):
     """callbackQuery handler. pattern:^charts$. Show chart"""
     log.info(log_msg(update))
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
 
     prepared_data = prepare_data()
     make_pie(prepared_data)
     make_bars(prepared_data)
-    
-    # to do: replace with list of all files in folder. hint: count files in folder (see speechBot)
-    media = [InputMediaPhoto(open(os.path.join('img', 'pie.png'), 'rb')),
-             InputMediaPhoto(open(os.path.join('img', 'pie_introduced.png'), 'rb'))]
-    media += [InputMediaPhoto(open(os.path.join('img', f'bar{i}.png'), 'rb')) for i in range(1, 5)]
+
+    charts_list = (os.listdir(os.path.join('img', 'charts')))
+    media = [InputMediaPhoto(open(os.path.join('img', 'charts', i), 'rb')) for i in charts_list]
 
     bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
@@ -724,9 +712,7 @@ def notifications_kbd(bot, update):
 def notifications_save(bot, update):
     """callbackQuery handler. pattern: from notifications_kbd func. Save notifications settings to db"""
     log.info(log_msg(update))
-
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
 
     user = Show.get(user_id=update.effective_user.id)
     user.notification_mode = update.callback_query.data
