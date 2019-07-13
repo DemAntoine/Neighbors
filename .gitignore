@@ -1,7 +1,7 @@
 __pycache__/
 *.py[cod]
 .idea
-logfile.log
+*.log
 temp.py
 temp2.py
 data.xlsm
