@@ -377,7 +377,7 @@ def msg_handler(bot, update):
 def group_chat_logging(bot, update):
     """handle text msgs in group chat. MessageHandler((Filters.text & Filters.group)"""
     msg = update.message.text
-    log_chat.info(log_msg(update) + f'msg: {msg}')
+    log_chat.info(log_msg(update) + f' msg: {msg}')
 
 
 def jubilee(bot, update, created_user):
