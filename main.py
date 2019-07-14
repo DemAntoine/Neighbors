@@ -390,8 +390,8 @@ def jubilee(bot, update, created_user):
 
     if query.count() in celebration_count:
         text = f'Вже зареєстровано {query.count()} ' + text
-    elif query.where(User.house == 1).count() in celebration_count:
-        text = f'В першому будинку вже зареєстровано {query.where(User.house == 1).count()} ' + text
+    # elif query.where(User.house == 1).count() in celebration_count:
+    #     text = f'В першому будинку вже зареєстровано {query.where(User.house == 1).count()} ' + text
     elif query.where(User.house == 2).count() in celebration_count:
         text = f'В другому будинку вже зареєстровано {query.where(User.house == 2).count()} ' + text
     elif query.where(User.house == 3).count() in celebration_count:
