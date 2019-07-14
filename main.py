@@ -15,18 +15,19 @@ from classes import filt_integers, filt_call_err, block_filter
 from config import log, log_chat, log_msg
 from functools import wraps
 
-
 KEY = sys.argv[1]
 print('key ...' + KEY[-6:] + ' successfully used')
 
 
 def send_typing_action(func):
     """Sends typing action while processing func command."""
+
     @wraps(func)
     def command_func(*args, **kwargs):
         bot, update = args
         bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.UPLOAD_DOCUMENT)
         return func(bot, update, **kwargs)
+
     return command_func
 
 
@@ -400,7 +401,7 @@ def jubilee(bot, update, created_user):
     else:
         return
     try:
-        bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML) # test chat
+        bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML)  # test chat
     except BadRequest:
         bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
 
@@ -475,13 +476,15 @@ def show_house(bot, update):
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
-    # if len(show_list) < 2500:
-    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
-                    reply_markup=reply_markup)
-    # else:
-    #     part_1, part_2, part_3 = show_list.partition('<pre>       📭 Секція 4</pre>\n')
-    #     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=part_1[:-2])
-    #     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=part_2 + part_3)
+    if len(show_list) < 6200:
+        bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
+                        reply_markup=reply_markup)
+    else:
+        part_1, part_2, part_3 = show_list.partition('📭 <b>Секція 4'.rjust(30, ' ') + '</b>' + '\n')
+        bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=part_1[:-2])
+        # to do: remove "." from 2nd msg. Without that dot, rjust not works
+        bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text='.' + part_2 + part_3,
+                        reply_markup=reply_markup)
     update.callback_query.answer()
 
 
@@ -749,7 +752,7 @@ def main():
     dispatcher.add_handler(MessageHandler((Filters.command & Filters.group), del_command))
     dispatcher.add_handler(MessageHandler((Filters.group & block_filter), del_msg))
     dispatcher.add_handler(MessageHandler((Filters.text & Filters.group), group_chat_logging))
-    
+
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
