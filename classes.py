@@ -7,7 +7,7 @@ class MyFilters(BaseFilter):
 
     @staticmethod
     def call_err(message):
-        return 'error' in message.text
+        return 'error' == message.text
 
     @staticmethod
     def integers(message):
