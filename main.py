@@ -742,6 +742,45 @@ def del_command(bot, update):
     chat_id = update.message.chat_id
     message_id = update.message.message_id
     bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+    
+    
+def talkative(bot, update):
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
+    data = {}
+    pattern = r'[0-9]{6,10}'
+    with open('log_chatfile.log', mode='r', encoding='utf-8') as file:
+        lines = file.readlines()
+        for line in lines:
+            try:
+                id_ = line.partition(re.search(pattern, line).group(0))[1]
+                name = line[line.find('name: ') + 6: line.find(' usrnm: ')]
+                data[id_] = [0, 0, name]
+            except AttributeError:
+                pass
+    
+    for i in data:
+        chat_file = open('log_chatfile.log', mode='r', encoding='utf-8')
+        for line in chat_file.readlines():
+            
+            id_ = line.partition(re.search(pattern, i).group(0))[1]
+            if id_ == i:
+                data[i][0] += len(line.split('msg: ')[1].strip())
+                data[i][1] += 1
+    
+    
+    by_chars = sorted(data.items(), key = lambda x : x[1][0], reverse=True)
+    by_msgs = sorted(data.items(), key = lambda x : x[1][1], reverse=True)
+    
+    template = '<a href="tg://user?id={}">{}</a> {}'
+    
+    talkatives_chars = [template.format(user[0], user[1][2], user[1][0]) + '\n' for user in by_chars[:10]]
+    talkatives_msgs = [template.format(user[0], user[1][2], user[1][1]) + '\n' for user in by_msgs[:10]]
+        
+    show_list = ('<b>Лідери по кількості знаків</b>\n' + '{}' * len(talkatives_chars)).format(*talkatives_chars) + \
+                '\n' + ('<b>Лідери по кількості повідомлень</b>\n' + '{}' * len(talkatives_msgs)).format(*talkatives_msgs)
+
+    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=True, text=show_list, reply_markup=reply_markup)
 
 
 def main():
@@ -759,6 +798,7 @@ def main():
     dispatcher.add_handler(CommandHandler("about", about_command))
 
     dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
+    dispatcher.add_handler(MessageHandler(filt_call_err, talkative))
     dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
