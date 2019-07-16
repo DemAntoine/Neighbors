@@ -389,9 +389,9 @@ def jubilee(bot, update, created_user):
     text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
 
     # to do: celebrate once! There is a bug. It will be celebrate each time for house 1, until count will stay at 100
-    if query.count() in celebration_count:
-        text = f'Вже зареєстровано {query.count()} ' + text
-    elif query.where(User.house == 4).count() in celebration_count:
+    # if query.count() in celebration_count:
+    #    text = f'Вже зареєстровано {query.count()} ' + text
+    if query.where(User.house == 4).count() in celebration_count:
         text = f'В четвертому будинку вже зареєстровано {query.where(User.house == 4).count()} ' + text
     elif query.where(User.house == 3).count() in celebration_count:
         text = f'В третьому будинку вже зареєстровано {query.where(User.house == 3).count()} ' + text
