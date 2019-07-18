@@ -385,38 +385,65 @@ def group_chat_logging(bot, update):
 def jubilee(bot, update, created_user):
     """Check if new added user is 'hero of the day' i.e some round number in db"""
     log.info(log_msg(update))
-    # celebration_count = [i for i in range(0, 2000, 50)]
-    # query = User.select().where(User.house, User.section)
-    #
-    # total = query.count()
-    # house_1 = query.where(User.house == 1).count()
-    # house_2 = query.where(User.house == 2).count()
-    # house_3 = query.where(User.house == 3).count()
-    # house_4 = query.where(User.house == 4).count()
-    #
-    # text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
-    #
-    # x, created = Jubilee.get_or_create(house=0, count=total)
-    # if total in celebration_count and created:
-    #     text = f'Вже зареєстровано {total} ' + text
-    # x, created = Jubilee.get_or_create(house=4, count=house_4)
-    # if house_4 in celebration_count and created:
-    #     text = f'В четвертому будинку вже зареєстровано {house_4} ' + text
-    # x, created = Jubilee.get_or_create(house=3, count=house_3)
-    # if house_3 in celebration_count and created:
-    #     text = f'В третьому будинку вже зареєстровано {house_3} ' + text
-    # x, created = Jubilee.get_or_create(house=2, count=house_2)
-    # if house_2 in celebration_count and created:
-    #     text = f'В другому будинку вже зареєстровано {house_2} ' + text
-    # x, created = Jubilee.get_or_create(house=1, count=house_1)
-    # if house_1 in celebration_count and created:
-    #     text = f'В першому будинку вже зареєстровано {house_1} ' + text
-    # else:
-    #     return
-    # try:
-    #     bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML)  # test chat
-    # except BadRequest:
-    #     bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
+    celebration_count = [i for i in range(0, 2000, 50)]
+    query = User.select().where(User.house, User.section)
+
+    total = query.count()
+    house_1 = query.where(User.house == 1).count()
+    house_2 = query.where(User.house == 2).count()
+    house_3 = query.where(User.house == 3).count()
+    house_4 = query.where(User.house == 4).count()
+
+    text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
+
+    # to do: edit this ugly piece of shit
+    if total in celebration_count:
+        x, created = Jubilee.get_or_create(house=0, count=total)
+        if created:
+            text = f'Вже зареєстровано {total} ' + text
+            try:
+                bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML)  # test chat
+            except BadRequest:
+                bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
+                return
+    elif house_4 in celebration_count:
+        x, created = Jubilee.get_or_create(house=4, count=house_4)
+        if created:
+            text = f'В четвертому будинку вже зареєстровано {house_4} ' + text
+            try:
+                bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML)  # test chat
+            except BadRequest:
+                bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
+                return
+    elif house_3 in celebration_count:
+        x, created = Jubilee.get_or_create(house=3, count=house_3)
+        if created:
+            text = f'В третьому будинку вже зареєстровано {house_3} ' + text
+            try:
+                bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML)  # test chat
+            except BadRequest:
+                bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
+                return
+
+    elif house_2 in celebration_count:
+        x, created = Jubilee.get_or_create(house=2, count=house_2)
+        if created:
+            text = f'В другому будинку вже зареєстровано {house_2} ' + text
+            try:
+                bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML)  # test chat
+            except BadRequest:
+                bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
+                return
+
+    elif house_1 in celebration_count:
+        x, created = Jubilee.get_or_create(house=1, count=house_1)
+        if created:
+            text = f'В першому будинку вже зареєстровано {house_1} ' + text
+            try:
+                bot.sendMessage(chat_id=-1001076439601, text=text, parse_mode=ParseMode.HTML)  # test chat
+            except BadRequest:
+                bot.sendMessage(chat_id=-1001307649156, text=text, parse_mode=ParseMode.HTML)
+                return
 
 
 def apartment_save(bot, update):
