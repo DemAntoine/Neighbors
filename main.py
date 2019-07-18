@@ -9,7 +9,7 @@ import re
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from datetime import datetime
-from models import User, Show
+from models import User, Show, Jubilee
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
 from classes import filt_integers, filt_call_err, block_filter
 from config import log, log_chat, log_msg
@@ -385,21 +385,32 @@ def group_chat_logging(bot, update):
 def jubilee(bot, update, created_user):
     """Check if new added user is 'hero of the day' i.e some round number in db"""
     log.info(log_msg(update))
-    celebration_count = [i for i in range(0, 1000, 50)]
+    celebration_count = [i for i in range(0, 2000, 50)]
     query = User.select().where(User.house, User.section)
+
+    total = query.count()
+    house_1 = query.where(User.house == 1).count()
+    house_2 = query.where(User.house == 2).count()
+    house_3 = query.where(User.house == 3).count()
+    house_4 = query.where(User.house == 4).count()
+
     text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
 
-    # to do: celebrate once! There is a bug. It will be celebrate each time for house 1, until count will stay at 100
-    if query.count() in celebration_count:
-        text = f'Вже зареєстровано {query.count()} ' + text
-    if query.where(User.house == 4).count() in celebration_count:
-        text = f'В четвертому будинку вже зареєстровано {query.where(User.house == 4).count()} ' + text
-    elif query.where(User.house == 3).count() in celebration_count:
-        text = f'В третьому будинку вже зареєстровано {query.where(User.house == 3).count()} ' + text
-    elif query.where(User.house == 2).count() in celebration_count:
-        text = f'В другому будинку вже зареєстровано {query.where(User.house == 2).count()} ' + text
-    elif query.where(User.house == 1).count() in celebration_count:
-        text = f'В першому будинку вже зареєстровано {query.where(User.house == 1).count()} ' + text
+    x, created = Jubilee.get_or_create(house=0, count=total)
+    if total in celebration_count and created:
+        text = f'Вже зареєстровано {total} ' + text
+    x, created = Jubilee.get_or_create(house=4, count=house_4)
+    if house_4 in celebration_count and created:
+        text = f'В четвертому будинку вже зареєстровано {house_4} ' + text
+    x, created = Jubilee.get_or_create(house=3, count=house_3)
+    if house_3 in celebration_count and created:
+        text = f'В третьому будинку вже зареєстровано {house_3} ' + text
+    x, created = Jubilee.get_or_create(house=2, count=house_2)
+    if house_2 in celebration_count and created:
+        text = f'В другому будинку вже зареєстровано {house_2} ' + text
+    x, created = Jubilee.get_or_create(house=1, count=house_1)
+    if house_1 in celebration_count and created:
+        text = f'В першому будинку вже зареєстровано {house_1} ' + text
     else:
         return
     try:
