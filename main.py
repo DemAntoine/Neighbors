@@ -689,7 +689,8 @@ def charts(bot, update):
     make_pie(prepared_data)
     make_bars(prepared_data)
 
-    charts_list = sorted((os.listdir(os.path.join('img', 'charts'))))
+    charts_dir = os.path.join('img', 'charts')
+    charts_list = sorted([f for f in os.listdir(charts_dir) if not f.startswith('.')])
     media = [InputMediaPhoto(open(os.path.join('img', 'charts', i), 'rb')) for i in charts_list]
 
     bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
