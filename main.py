@@ -429,7 +429,7 @@ def apartment_save(bot, update):
         user_mode.save()
         user_created_report(bot, update, created_user=user, text=text)
         new_neighbor_report(bot, update, created_user=user)
-        start_command(bot, update)
+        menu_kbd(bot, update)
 
 
 def save_user_data(bot, update):
@@ -597,13 +597,13 @@ def prepare_data():
 def statistics(bot, update):
     """callbackQuery handler. pattern:^statistics$"""
     log.info(log_msg(update))
+    update.callback_query.answer()
     keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu'),
                  InlineKeyboardButton('Графіка', callback_data='charts')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     show_list = prepare_data()['show_list']
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
                     reply_markup=reply_markup)
-    update.callback_query.answer()
 
 
 def make_pie(prepared_data):
@@ -689,7 +689,7 @@ def charts(bot, update):
     make_pie(prepared_data)
     make_bars(prepared_data)
 
-    charts_list = (os.listdir(os.path.join('img', 'charts')))
+    charts_list = sorted((os.listdir(os.path.join('img', 'charts'))))
     media = [InputMediaPhoto(open(os.path.join('img', 'charts', i), 'rb')) for i in charts_list]
 
     bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
