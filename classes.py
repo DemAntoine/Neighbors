@@ -24,13 +24,6 @@ class MyFilters(BaseFilter):
             return found if found else False
 
     @staticmethod
-    def fuck(message):
-        pattern = r'\bхуй\w{,4}\b|\bп.зда\w{,4}\b'
-        if message.text:
-            found = re.findall(pattern, message.text, flags=re.IGNORECASE)
-            return found if found else False
-
-    @staticmethod
     # block forwarding msg from specific users
     def open_data_ua_bot(message):
         if message.forward_from:
@@ -40,13 +33,12 @@ class MyFilters(BaseFilter):
 filt_integers = MyFilters().integers
 filt_call_err = MyFilters().call_err
 filt_flood = MyFilters().flood
-filt_fuck = MyFilters().fuck
 # filt_open_data_ua_bot = MyFilters().open_data_ua_bot
 
 
 class FilterBlock(BaseFilter):
     def filter(self, message):
-        pattern = r'\bхуй\w{,4}\b|\bп.зда\w{,4}\b'
+        pattern = r'\bху[е,й,я]\w{,4}\b|\bп[і,ы,и]зда\w{,4}\b'
         if message.text:
             found = re.findall(pattern, message.text, flags=re.IGNORECASE)
             return found if found else False
