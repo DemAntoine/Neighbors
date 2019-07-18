@@ -99,6 +99,7 @@ def building(bot, update):
     update.callback_query.answer()
 
 
+@run_async
 def new_neighbor_report(bot, update, created_user):
     """Send message for users who enabled notifications"""
     log.info(log_msg(update))
@@ -133,6 +134,7 @@ def new_neighbor_report(bot, update, created_user):
                             parse_mode=ParseMode.HTML)
 
 
+@run_async
 def user_created_report(bot, update, created_user, text):
     """when created new, or updated user - send report-message for admins"""
     log.info(log_msg(update))
@@ -389,16 +391,16 @@ def jubilee(bot, update, created_user):
     text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
 
     # to do: celebrate once! There is a bug. It will be celebrate each time for house 1, until count will stay at 100
-    # if query.count() in celebration_count:
-    #    text = f'Вже зареєстровано {query.count()} ' + text
+    if query.count() in celebration_count:
+        text = f'Вже зареєстровано {query.count()} ' + text
     if query.where(User.house == 4).count() in celebration_count:
         text = f'В четвертому будинку вже зареєстровано {query.where(User.house == 4).count()} ' + text
     elif query.where(User.house == 3).count() in celebration_count:
         text = f'В третьому будинку вже зареєстровано {query.where(User.house == 3).count()} ' + text
     elif query.where(User.house == 2).count() in celebration_count:
         text = f'В другому будинку вже зареєстровано {query.where(User.house == 2).count()} ' + text
-    # elif query.where(User.house == 1).count() in celebration_count:
-    #     text = f'В першому будинку вже зареєстровано {query.where(User.house == 1).count()} ' + text
+    elif query.where(User.house == 1).count() in celebration_count:
+        text = f'В першому будинку вже зареєстровано {query.where(User.house == 1).count()} ' + text
     else:
         return
     try:
@@ -454,7 +456,7 @@ def save_user_data(bot, update):
     new_neighbor_report(bot, update, created_user=user)
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
-    start_command(bot, update)
+    menu_kbd(bot, update)
 
 
 def show_house(bot, update):
