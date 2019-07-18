@@ -115,7 +115,7 @@ def new_neighbor_report(bot, update, created_user):
             bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
                             text=f'Новий сусід\n{created_user.joined_str()}')
         except BadRequest as err:
-            bot.sendMessage(chat_id=3680016, text=f'failed to send notification for user {user.user_id} {err}',
+            bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user_id} {err}',
                             parse_mode=ParseMode.HTML)
 
     # query for users who set notifications as _notify_section    
@@ -138,6 +138,10 @@ def user_created_report(bot, update, created_user, text):
     """when created new, or updated user - send report-message for admins"""
     log.info(log_msg(update))
     bot.sendMessage(chat_id=ADMIN_ID, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    try:
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    except BadRequest:
+        pass
     jubilee(bot, update, created_user)
 
 
