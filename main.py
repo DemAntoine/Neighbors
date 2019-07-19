@@ -6,6 +6,7 @@ import sys
 import os
 import time
 import re
+import shutil
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from datetime import datetime
@@ -380,6 +381,13 @@ def group_chat_logging(bot, update):
     """handle text msgs in group chat. MessageHandler((Filters.text & Filters.group)"""
     msg = update.message.text
     log_chat.info(log_msg(update) + f' msg: {msg}')
+    
+    src = os.path.join('logfiles', 'log_chat.log')
+    if os.stat(src).st_size > 10**6:
+        dst = os.path.join('logfiles', datetime.now().strftime('%y.%m.%d ') + 'log_chat.log')
+        shutil.copyfile(src, dst)
+        with open(src, 'w'):
+            pass
 
 
 def jubilee(bot, update, created_user):
