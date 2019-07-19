@@ -35,7 +35,7 @@ log.setLevel(logging.INFO)
 
 log_chat = logging.getLogger('ChatLogger')
 logging.Formatter.converter = customTime
-fh = logging.FileHandler(os.path.join('logfiles', 'log_chatfile.log'), encoding='utf-8')
+fh = logging.FileHandler(os.path.join('logfiles', 'log_chat.log'), encoding='utf-8')
 fh.setLevel(logging.INFO)
 fh.setFormatter(logging.Formatter('{asctime} {message}', datefmt='%y.%m.%d %H:%M:%S', style='{'))
 log_chat.addHandler(fh)
