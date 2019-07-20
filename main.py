@@ -793,26 +793,30 @@ def del_command(bot, update):
 
 def talkative(bot, update):
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
+    log_files_list = [f for f in os.listdir('logfiles') if not f.startswith('.')]
     data = {}
-    pattern = r' [0-9]{6,10} '
-    with open('log_chatfile.log', mode='r', encoding='utf-8') as file:
-        lines = file.readlines()
-        for line in lines:
-            try:
-                id_ = line.partition(re.search(pattern, line).group(0))[1]
-                name = line[line.find('name: ') + 6: line.find(' usrnm: ')]
-                data[id_.strip()] = [0, 0, name]
-            except AttributeError:
-                pass
 
-    for i in data:
-        chat_file = open('log_chatfile.log', mode='r', encoding='utf-8')
-        for line in chat_file.readlines():
-            id_ = line.partition(re.search(pattern.strip(), i).group(0))[1]
-            if id_.strip() == i:
-                data[i][0] += len(line.split('msg: ')[1].strip())
-                data[i][1] += 1
-
+    for log_file in log_files_list:
+        pattern = r' [0-9]{6,10} '
+        with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
+            lines = file.readlines()
+            for line in lines:
+                try:
+                    id_ = line.partition(re.search(pattern, line).group(0))[1]
+                    name = line[line.find('name: ') + 6: line.find(' usrnm: ')]
+                    data[id_.strip()] = [0, 0, name]
+                except AttributeError:
+                    pass
+    
+    for log_file in log_files_list:     
+        for i in data:
+            chat_file = open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8')
+            for line in chat_file.readlines():
+                id_ = line.partition(re.search(pattern.strip(), i).group(0))[1]
+                if id_.strip() == i:
+                    data[i][0] += len(line.split('msg: ')[1].strip())
+                    data[i][1] += 1
+                    
     by_chars = sorted(data.items(), key=lambda x: x[1][0], reverse=True)
     by_msgs = sorted(data.items(), key=lambda x: x[1][1], reverse=True)
 
