@@ -792,12 +792,15 @@ def del_command(bot, update):
 
 
 def talkative(bot, update):
+    """Statistics for messaging in group chat. Show top 10 by msgs and by chars"""
+    log.info(log_msg(update))
+    # to do: needs optimization
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
     log_files_list = [f for f in os.listdir('logfiles') if not f.startswith('.')]
     data = {}
+    pattern = r' [0-9]{6,10} '
 
     for log_file in log_files_list:
-        pattern = r' [0-9]{6,10} '
         with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
             lines = file.readlines()
             for line in lines:
