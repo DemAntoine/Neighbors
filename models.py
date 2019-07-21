@@ -97,5 +97,5 @@ class Jubilee(Model):
     celebrated = DateTimeField(default=time_format)
 
 
-# if __name__ == '__main__':
-#     db.create_tables([User, Show, Jubilee], safe=True)
+if __name__ == '__main__':
+    db.create_tables([User, Show, Jubilee], safe=True)
