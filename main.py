@@ -158,12 +158,16 @@ def menu_kbd(bot, update):
                     [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')],
                     [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
                      InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
-                    [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')]]
+                    [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')],
+                    # [InlineKeyboardButton('Паркомісця 🚗', callback_data='parking')],
+                    ]
     else:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
                     [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
-                    [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')]]
+                    [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')],
+                    # [InlineKeyboardButton('Паркомісця 🚗', callback_data='parking')],
+                    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text='Меню:',
                     reply_markup=reply_markup, parse_mode=ParseMode.HTML)
@@ -238,12 +242,14 @@ def houses_kbd(bot, update):
     """show keyboard to chose house to show"""
     log.info(log_msg(update))
     update.callback_query.answer()
+
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='p_h1'),
                  InlineKeyboardButton('Будинок 2', callback_data='p_h2')],
                 [InlineKeyboardButton('Будинок 3', callback_data='p_h3'),
                  InlineKeyboardButton('Будинок 4', callback_data='p_h4')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('Який будинок показати ? 🏠 :', reply_markup=reply_markup)
+    bot.editMessageText('Який будинок показати ? 🏠 :', reply_markup=reply_markup,
+                        message_id=update.effective_message.message_id, chat_id=update.effective_user.id)
 
 
 def section_kbd(bot, update):
@@ -267,7 +273,8 @@ def section_kbd(bot, update):
         del keyboard[-2][1]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.message.reply_text('Яку секцію показати ? 🔢 :', reply_markup=reply_markup)
+    bot.editMessageText('Яку секцію показати ? 🔢 :', reply_markup=reply_markup,
+                        message_id=update.effective_message.message_id, chat_id=update.effective_user.id)
 
 
 def save_params(bot, update):
@@ -366,6 +373,15 @@ def set_apartment_kbd(bot, update):
     keyboard = [[InlineKeyboardButton('Не хочу вказувати квартиру', callback_data='_apart_reject')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup)
+
+
+def parking_kbd(bot, update):
+    log.info(log_msg(update))
+    update.callback_query.answer()
+    keyboard = [[InlineKeyboardButton(str(j + i),
+                                      callback_data=f'_park-{j + i}') for j in range(1, 8)] for i in range(0, 105, 7)]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.callback_query.message.reply_text('Паркомісця:', reply_markup=reply_markup)
 
 
 def msg_handler(bot, update):
@@ -616,8 +632,8 @@ def statistics(bot, update):
                  InlineKeyboardButton('Графіка', callback_data='charts')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     show_list = prepare_data()['show_list']
-    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
-                    reply_markup=reply_markup)
+    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
+                        message_id=update.effective_message.message_id, reply_markup=reply_markup)
 
 
 def make_pie(prepared_data):
@@ -719,7 +735,8 @@ def notifications_kbd(bot, update):
     update.callback_query.answer()
     keyboard = [[InlineKeyboardButton('В моєму будинку 🏠', callback_data='_notify_house')],
                 [InlineKeyboardButton('В моїй секції 🔢', callback_data='_notify_section')],
-                [InlineKeyboardButton('Вимкнути сповіщення 🔕', callback_data='_notify_OFF')]]
+                [InlineKeyboardButton('Вимкнути сповіщення 🔕', callback_data='_notify_OFF')],
+                [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     user = Show.get(user_id=update.effective_user.id)
     _dict = {None: 'Вимкнено', '_notify_OFF': 'Вимкнено',
@@ -797,7 +814,7 @@ def talkative(bot, update):
     show_list = ('<b>Лідери по кількості знаків</b>\n' + '{}'
                  * len(talkatives_chars)).format(*talkatives_chars) + '\n' + \
                 ('<b>Лідери по кількості повідомлень</b>\n' + '{}' * len(talkatives_msgs)).format(
-        *talkatives_msgs)
+                    *talkatives_msgs)
 
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True, text=show_list, reply_markup=reply_markup)
@@ -837,6 +854,7 @@ def main():
     dispatcher.add_handler(CallbackQueryHandler(callback=set_section_kbd, pattern='^_h'))
     dispatcher.add_handler(
         CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$|^_floor_reject$|^_section_reject$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=parking_kbd, pattern='^parking$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_apartment_kbd, pattern='^_f'))
 
