@@ -15,6 +15,7 @@ from constants import help_msg, about_msg, building_msg, houses_arr, greeting_ms
 from classes import filt_integers, filt_call_err, block_filter
 from config import log, log_chat, log_msg
 from functools import wraps
+from statistic.stat_classes import CommonStat, Charts, ChatStat
 
 KEY = sys.argv[1]
 ADMIN_ID = sys.argv[2]
@@ -457,12 +458,12 @@ def apartment_save(bot, update):
         bot.sendMessage(text=text_success, chat_id=update.effective_user.id, parse_mode=ParseMode.HTML)
         user_mode.msg_apart_mode = False
         user_mode.save()
-        
+
         user_created_report(bot, update, created_user=user, text=text)
         new_neighbor_report(bot, update, created_user=user)
-        
+
         menu_kbd(bot, update)
-        
+
         prepared_data = prepare_data()
         make_pie(prepared_data)
         make_bars(prepared_data)
@@ -493,7 +494,7 @@ def save_user_data(bot, update):
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
     menu_kbd(bot, update)
-    
+
     prepared_data = prepare_data()
     make_pie(prepared_data)
     make_bars(prepared_data)
@@ -639,9 +640,9 @@ def statistics_kbd(bot, update):
     log.info(log_msg(update))
     update.callback_query.answer()
     keyboard = [[InlineKeyboardButton('Загальна інфо', callback_data='statistics_common')],
-                 [InlineKeyboardButton('Графіка 📊', callback_data='charts')],
-                 [InlineKeyboardButton('Чат 💬', callback_data='statistics_chat')],
-                 ]
+                [InlineKeyboardButton('Графіка 📊', callback_data='charts')],
+                [InlineKeyboardButton('Чат 💬', callback_data='statistics_chat')],
+                [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text='<b>Статистика</b>',
                         message_id=update.effective_message.message_id, reply_markup=reply_markup)
@@ -649,78 +650,18 @@ def statistics_kbd(bot, update):
 
 def statistics_common(bot, update):
     """callbackQuery handler. pattern:^statistics_common$"""
-    log.info(log_msg(update))
-    update.callback_query.answer()
-    keyboard = [[InlineKeyboardButton('Назад', callback_data='statistics'),
-                 InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    show_list = prepare_data()['show_list']
-    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
-                        message_id=update.effective_message.message_id, reply_markup=reply_markup)
+    CommonStat(bot, update).answer(bot, update, prepare_data()['show_list'])
 
 
 @send_typing_action
 def charts(bot, update):
     """callbackQuery handler. pattern:^charts$. Show chart"""
-    log.info(log_msg(update))
-    update.callback_query.answer()
-    keyboard = [[InlineKeyboardButton('Назад', callback_data='statistics'),
-                 InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    charts_dir = os.path.join('img', 'charts')
-    charts_list = sorted([f for f in os.listdir(charts_dir) if not f.startswith('.')])
-    media = [InputMediaPhoto(open(os.path.join('img', 'charts', i), 'rb')) for i in charts_list]
-
-    bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
-    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
-                    reply_markup=reply_markup, text='Повернутись в меню:')
+    Charts(bot, update).answer(bot, update)
 
 
 def statistics_chat(bot, update):
     """Statistics for messaging in group chat. Show top 10 by msgs and by chars"""
-    log.info(log_msg(update))
-    update.callback_query.answer()
-    keyboard = [[InlineKeyboardButton('Назад', callback_data='statistics'),
-                 InlineKeyboardButton('Меню', callback_data='_menu')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    log_files_list = [f for f in os.listdir('logfiles') if not f.startswith('.')]
-    data = {}
-    id_pattern = r' ([0-9]{6,10}) '
-    pattern = r' ([0-9]{6,10}) name: (.*) usrnm: '
-
-    for log_file in log_files_list:
-        with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
-            text = file.read()
-            match = list(set(re.findall(pattern, text)))
-            data = {i[0]: [0, 0, i[1]] for i in match}
-
-    for log_file in log_files_list:
-        with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
-            for line in file.readlines():
-                try:
-                    id_ = re.search(id_pattern, line).group().strip()
-                    data[id_][0] += len(line.split('msg: ')[1].strip())
-                    data[id_][1] += 1
-                except (KeyError, AttributeError):
-                    pass
-
-    by_chars = sorted(data.items(), key=lambda x: x[1][0], reverse=True)
-    by_msgs = sorted(data.items(), key=lambda x: x[1][1], reverse=True)
-
-    template = '<a href="tg://user?id={}">{}</a> {}'
-
-    talkatives_chars = [template.format(user[0], user[1][2], user[1][0]) + '\n' for user in by_chars[:10]]
-    talkatives_msgs = [template.format(user[0], user[1][2], user[1][1]) + '\n' for user in by_msgs[:10]]
-
-    show_list = ('<b>Лідери по кількості знаків</b>\n' + '{}'
-                 * len(talkatives_chars)).format(*talkatives_chars) + '\n' + \
-                ('<b>Лідери по кількості повідомлень</b>\n' + '{}' * len(talkatives_msgs)).format(
-                    *talkatives_msgs)
-
-    bot.editMessageText(chat_id=update.effective_user.id, message_id=update.effective_message.message_id,
-                        parse_mode=ParseMode.HTML, text=show_list, reply_markup=reply_markup)
+    ChatStat(bot, update).answer(bot, update)
 
 
 @run_async
