@@ -33,13 +33,54 @@ def send_typing_action(func):
     return command_func
 
 
-def chosen_owns(update):
-    user_id = update.effective_user.id
-    try:
-        user = User.select().where(User.user_id == user_id)[Show.get(user_id=user_id).owns or 0]
-    except IndexError:
-        user = User.select().where(User.user_id == user_id)[0]
-    return user
+def start_command(bot, update):
+    """handle /start command"""
+    log.info(log_msg(update))
+    if update.callback_query:
+        update.callback_query.answer()
+    is_changed(update)
+    menu_kbd(bot, update)
+
+
+def help_command(bot, update):
+    """handle /help command"""
+    log.info(log_msg(update))
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
+    bot.sendMessage(chat_id=update.effective_user.id, text=help_msg, parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup)
+
+
+def about_command(bot, update):
+    """handle /about command"""
+    log.info(log_msg(update))
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
+    bot.sendMessage(chat_id=update.effective_user.id, text=about_msg,
+                    parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
+
+
+def menu_kbd(bot, update):
+    """show keyboard to chose: show neighbors or edit own info"""
+    log.info(log_msg(update))
+    if User.get(user_id=update.effective_user.id).house and User.get(user_id=update.effective_user.id).section:
+        keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
+                    [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
+                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
+                    [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
+                    [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
+                     InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
+                    [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')],
+                    # [InlineKeyboardButton('Паркомісця 🚗', callback_data='parking')],
+                    ]
+    else:
+        keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
+                    [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
+                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
+                    [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
+                    # [InlineKeyboardButton('Паркомісця 🚗', callback_data='parking')],
+                    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    bot.sendMessage(chat_id=update.effective_user.id, text='<b>Меню:</b>',
+                    reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
 def is_changed(update):
@@ -67,29 +108,13 @@ def is_changed(update):
         user.save()
 
 
-def start_command(bot, update):
-    """handle /start command"""
-    log.info(log_msg(update))
-    if update.callback_query:
-        update.callback_query.answer()
-    is_changed(update)
-    menu_kbd(bot, update)
-
-
-def help_command(bot, update):
-    """handle /help command"""
-    log.info(log_msg(update))
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
-    bot.sendMessage(chat_id=update.effective_user.id, text=help_msg, parse_mode=ParseMode.HTML,
-                    reply_markup=reply_markup)
-
-
-def about_command(bot, update):
-    """handle /about command"""
-    log.info(log_msg(update))
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
-    bot.sendMessage(chat_id=update.effective_user.id, text=about_msg,
-                    parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
+def chosen_owns(update):
+    user_id = update.effective_user.id
+    try:
+        user = User.select().where(User.user_id == user_id)[Show.get(user_id=user_id).owns or 0]
+    except IndexError:
+        user = User.select().where(User.user_id == user_id)[0]
+    return user
 
 
 def building(bot, update):
@@ -121,7 +146,7 @@ def new_neighbor_report(bot, update, created_user):
             bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user_id} {err}',
                             parse_mode=ParseMode.HTML)
 
-    # query for users who set notifications as _notify_section    
+    # query for users who set notifications as _notify_section
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_section')
     query_users = query_users.where(User.section == created_user.section)
     query = query_params & query_users
@@ -146,31 +171,6 @@ def user_created_report(bot, update, created_user, text):
     except BadRequest:
         pass
     jubilee(bot, update, created_user)
-
-
-def menu_kbd(bot, update):
-    """show keyboard to chose: show neighbors or edit own info"""
-    log.info(log_msg(update))
-    if User.get(user_id=update.effective_user.id).house and User.get(user_id=update.effective_user.id).section:
-        keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                    [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
-                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
-                    [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')],
-                    [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
-                     InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
-                    [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')],
-                    # [InlineKeyboardButton('Паркомісця 🚗', callback_data='parking')],
-                    ]
-    else:
-        keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                    [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
-                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
-                    [InlineKeyboardButton('Статистика бота 📊️', callback_data='statistics')],
-                    # [InlineKeyboardButton('Паркомісця 🚗', callback_data='parking')],
-                    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.sendMessage(chat_id=update.effective_user.id, text='Меню:',
-                    reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
 def check_owns(bot, update):
@@ -634,29 +634,94 @@ def prepare_data():
     return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values, 'introduced': introduced}
 
 
-def statistics(bot, update):
+def statistics_kbd(bot, update):
     """callbackQuery handler. pattern:^statistics$"""
     log.info(log_msg(update))
     update.callback_query.answer()
-    keyboard = [[InlineKeyboardButton('Меню', callback_data='_menu'),
-                 InlineKeyboardButton('Графіка', callback_data='charts')]]
+    keyboard = [[InlineKeyboardButton('Загальна інфо', callback_data='statistics_common')],
+                 [InlineKeyboardButton('Графіка 📊', callback_data='charts')],
+                 [InlineKeyboardButton('Чат 💬', callback_data='statistics_chat')],
+                 ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text='<b>Статистика</b>',
+                        message_id=update.effective_message.message_id, reply_markup=reply_markup)
+
+
+def statistics_common(bot, update):
+    """callbackQuery handler. pattern:^statistics_common$"""
+    log.info(log_msg(update))
+    update.callback_query.answer()
+    keyboard = [[InlineKeyboardButton('Назад', callback_data='statistics'),
+                 InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     show_list = prepare_data()['show_list']
     bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
                         message_id=update.effective_message.message_id, reply_markup=reply_markup)
 
 
-def statistics_kbd(bot, update):
+@send_typing_action
+def charts(bot, update):
+    """callbackQuery handler. pattern:^charts$. Show chart"""
     log.info(log_msg(update))
     update.callback_query.answer()
-    keyboard = [[InlineKeyboardButton('Загальна інфо', callback_data='_menu'),
-                 InlineKeyboardButton('Графіка 📊', callback_data='charts'),
-                 InlineKeyboardButton('Чат 💬', callback_data='charts'),
-                 ]]
+    keyboard = [[InlineKeyboardButton('Назад', callback_data='statistics'),
+                 InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text='Статистика',
-                        message_id=update.effective_message.message_id, reply_markup=reply_markup)
-                        
+
+    charts_dir = os.path.join('img', 'charts')
+    charts_list = sorted([f for f in os.listdir(charts_dir) if not f.startswith('.')])
+    media = [InputMediaPhoto(open(os.path.join('img', 'charts', i), 'rb')) for i in charts_list]
+
+    bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
+    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup, text='Повернутись в меню:')
+
+
+def statistics_chat(bot, update):
+    """Statistics for messaging in group chat. Show top 10 by msgs and by chars"""
+    log.info(log_msg(update))
+    update.callback_query.answer()
+    keyboard = [[InlineKeyboardButton('Назад', callback_data='statistics'),
+                 InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    log_files_list = [f for f in os.listdir('logfiles') if not f.startswith('.')]
+    data = {}
+    id_pattern = r' ([0-9]{6,10}) '
+    pattern = r' ([0-9]{6,10}) name: (.*) usrnm: '
+
+    for log_file in log_files_list:
+        with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
+            text = file.read()
+            match = list(set(re.findall(pattern, text)))
+            data = {i[0]: [0, 0, i[1]] for i in match}
+
+    for log_file in log_files_list:
+        with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
+            for line in file.readlines():
+                try:
+                    id_ = re.search(id_pattern, line).group().strip()
+                    data[id_][0] += len(line.split('msg: ')[1].strip())
+                    data[id_][1] += 1
+                except (KeyError, AttributeError):
+                    pass
+
+    by_chars = sorted(data.items(), key=lambda x: x[1][0], reverse=True)
+    by_msgs = sorted(data.items(), key=lambda x: x[1][1], reverse=True)
+
+    template = '<a href="tg://user?id={}">{}</a> {}'
+
+    talkatives_chars = [template.format(user[0], user[1][2], user[1][0]) + '\n' for user in by_chars[:10]]
+    talkatives_msgs = [template.format(user[0], user[1][2], user[1][1]) + '\n' for user in by_msgs[:10]]
+
+    show_list = ('<b>Лідери по кількості знаків</b>\n' + '{}'
+                 * len(talkatives_chars)).format(*talkatives_chars) + '\n' + \
+                ('<b>Лідери по кількості повідомлень</b>\n' + '{}' * len(talkatives_msgs)).format(
+                    *talkatives_msgs)
+
+    bot.editMessageText(chat_id=update.effective_user.id, message_id=update.effective_message.message_id,
+                        parse_mode=ParseMode.HTML, text=show_list, reply_markup=reply_markup)
+
 
 @run_async
 def make_pie(prepared_data):
@@ -733,22 +798,6 @@ def make_bars(prepared_data):
         plt.close()
 
 
-@send_typing_action
-def charts(bot, update):
-    """callbackQuery handler. pattern:^charts$. Show chart"""
-    log.info(log_msg(update))
-    update.callback_query.answer()
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
-
-    charts_dir = os.path.join('img', 'charts')
-    charts_list = sorted([f for f in os.listdir(charts_dir) if not f.startswith('.')])
-    media = [InputMediaPhoto(open(os.path.join('img', 'charts', i), 'rb')) for i in charts_list]
-
-    bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
-    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
-                    reply_markup=reply_markup, text='Повернутись в меню:')
-
-
 def notifications_kbd(bot, update):
     """callbackQuery handler. pattern:^notifications$. Show notifications keyboard settings"""
     log.info(log_msg(update))
@@ -797,49 +846,6 @@ def del_command(bot, update):
         pass
 
 
-def talkative(bot, update):
-    """Statistics for messaging in group chat. Show top 10 by msgs and by chars"""
-    log.info(log_msg(update))
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
-
-    log_files_list = [f for f in os.listdir('logfiles') if not f.startswith('.')]
-    data = {}
-    id_pattern = r' ([0-9]{6,10}) '
-    pattern = r' ([0-9]{6,10}) name: (.*) usrnm: '
-
-    for log_file in log_files_list:
-        with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
-            text = file.read()
-            match = list(set(re.findall(pattern, text)))
-            data = {i[0]: [0, 0, i[1]] for i in match}
-
-    for log_file in log_files_list:
-        with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
-            for line in file.readlines():
-                try:
-                    id_ = re.search(id_pattern, line).group().strip()
-                    data[id_][0] += len(line.split('msg: ')[1].strip())
-                    data[id_][1] += 1
-                except (KeyError, AttributeError):
-                    pass
-
-    by_chars = sorted(data.items(), key=lambda x: x[1][0], reverse=True)
-    by_msgs = sorted(data.items(), key=lambda x: x[1][1], reverse=True)
-
-    template = '<a href="tg://user?id={}">{}</a> {}'
-
-    talkatives_chars = [template.format(user[0], user[1][2], user[1][0]) + '\n' for user in by_chars[:10]]
-    talkatives_msgs = [template.format(user[0], user[1][2], user[1][1]) + '\n' for user in by_msgs[:10]]
-
-    show_list = ('<b>Лідери по кількості знаків</b>\n' + '{}'
-                 * len(talkatives_chars)).format(*talkatives_chars) + '\n' + \
-                ('<b>Лідери по кількості повідомлень</b>\n' + '{}' * len(talkatives_msgs)).format(
-                    *talkatives_msgs)
-
-    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
-                    disable_web_page_preview=True, text=show_list, reply_markup=reply_markup)
-
-
 def main():
     updater = Updater(KEY)
 
@@ -849,18 +855,22 @@ def main():
     dispatcher.add_handler(MessageHandler((Filters.command & Filters.group), del_command))
     dispatcher.add_handler(MessageHandler((Filters.group & block_filter), del_msg))
     dispatcher.add_handler(MessageHandler((Filters.text & Filters.group), group_chat_logging))
-
+    # commands
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("about", about_command))
 
     dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
-    dispatcher.add_handler(MessageHandler(filt_call_err, talkative))
+    # dispatcher.add_handler(MessageHandler(filt_call_err, talkative))
     dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=statistics, pattern='^statistics$'))
+    # statistics
+    dispatcher.add_handler(CallbackQueryHandler(callback=statistics_kbd, pattern='^statistics$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=statistics_common, pattern='^statistics_common$'))
+    dispatcher.add_handler(CallbackQueryHandler(callback=statistics_chat, pattern='^statistics_chat$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=charts, pattern='^charts$'))
+
     dispatcher.add_handler(CallbackQueryHandler(callback=notifications_kbd, pattern='^notifications$'))
     dispatcher.add_handler(
         CallbackQueryHandler(callback=notifications_save, pattern='^_notify_section$|^_notify_house$|^_notify_OFF$'))
