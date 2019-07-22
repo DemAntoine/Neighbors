@@ -457,9 +457,15 @@ def apartment_save(bot, update):
         bot.sendMessage(text=text_success, chat_id=update.effective_user.id, parse_mode=ParseMode.HTML)
         user_mode.msg_apart_mode = False
         user_mode.save()
+        
         user_created_report(bot, update, created_user=user, text=text)
         new_neighbor_report(bot, update, created_user=user)
+        
         menu_kbd(bot, update)
+        
+        prepared_data = prepare_data()
+        make_pie(prepared_data)
+        make_bars(prepared_data)
 
 
 def save_user_data(bot, update):
@@ -487,6 +493,10 @@ def save_user_data(bot, update):
     bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
                     text='<b>Дякую, Ваші дані збережені</b>. Бажаєте подивитись сусідів?')
     menu_kbd(bot, update)
+    
+    prepared_data = prepare_data()
+    make_pie(prepared_data)
+    make_bars(prepared_data)
 
 
 def show_house(bot, update):
@@ -636,6 +646,7 @@ def statistics(bot, update):
                         message_id=update.effective_message.message_id, reply_markup=reply_markup)
 
 
+@run_async
 def make_pie(prepared_data):
     """create pie total by houses"""
     log.info('this func has no update')
@@ -679,6 +690,7 @@ def make_pie(prepared_data):
     plt.close()
 
 
+@run_async
 def make_bars(prepared_data):
     """create bars for houses sections count"""
     log.info('this func has no update')
@@ -715,10 +727,6 @@ def charts(bot, update):
     log.info(log_msg(update))
     update.callback_query.answer()
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
-
-    prepared_data = prepare_data()
-    make_pie(prepared_data)
-    make_bars(prepared_data)
 
     charts_dir = os.path.join('img', 'charts')
     charts_list = sorted([f for f in os.listdir(charts_dir) if not f.startswith('.')])
