@@ -646,6 +646,18 @@ def statistics(bot, update):
                         message_id=update.effective_message.message_id, reply_markup=reply_markup)
 
 
+def statistics_kbd(bot, update):
+    log.info(log_msg(update))
+    update.callback_query.answer()
+    keyboard = [[InlineKeyboardButton('Загальна інфо', callback_data='_menu'),
+                 InlineKeyboardButton('Графіка 📊', callback_data='charts'),
+                 InlineKeyboardButton('Чат 💬', callback_data='charts'),
+                 ]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text='Статистика',
+                        message_id=update.effective_message.message_id, reply_markup=reply_markup)
+                        
+
 @run_async
 def make_pie(prepared_data):
     """create pie total by houses"""
