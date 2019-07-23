@@ -679,19 +679,22 @@ def make_pie(prepared_data):
 
         return my_autopct
 
-    # pie by house    
-    values = prepared_data['pie_values']
-    labels = [f'Буд. {i + 1}' for i in range(len(values))]
-
-    fig = plt.figure(figsize=(10, 7))
-    mpl.rcParams.update({'font.size': 20})
-    plt.pie(values, autopct=make_autopct(values), radius=1.5, pctdistance=0.8,
-            shadow=True, labels=labels, labeldistance=1.05)
-
+    # Pie chart, where the slices will be ordered and plotted counter-clockwise:
+    sizes = prepared_data['pie_values']
+    labels = [f'Буд. {i + 1}' for i in range(len(sizes))]
+    # explode = (0, 0.1, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
+    
+    fig1, ax1 = plt.subplots(figsize=(9, 7.5))
+    ax1.pie(sizes, labels=labels, autopct=make_autopct(sizes), radius=1.3, pctdistance=0.8,
+            shadow=True, labeldistance=1.5)
+    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    
     img_path = os.path.join('img', 'charts', '1_pie.png')
-    fig.savefig(img_path)
+    fig1.savefig(img_path)
     plt.clf()
     plt.close()
+    
+    
 
     # pie by introduced
     values = list(prepared_data['introduced'].values())
