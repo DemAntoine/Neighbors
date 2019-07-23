@@ -62,7 +62,8 @@ def about_command(bot, update):
 def menu_kbd(bot, update):
     """show keyboard to chose: show neighbors or edit own info"""
     log.info(log_msg(update))
-    if User.get(user_id=update.effective_user.id).house and User.get(user_id=update.effective_user.id).section:
+    
+    if User.get_or_none(User.house, User.section, user_id=update.effective_user.id):
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
                     [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
@@ -513,7 +514,7 @@ def show_house(bot, update):
         # if user want see own house and have one
         user_query = chosen_owns(update)
     neighbors = []
-    sections = User.select(User.section).where(User.house == user_query.house).distinct().order_by(User.section)
+    sections = User.select(User.section).where(User.house == user_query.house, User.section).distinct().order_by(User.section)
     for i in sections:
         neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
         for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
