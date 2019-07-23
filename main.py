@@ -62,7 +62,7 @@ def about_command(bot, update):
 def menu_kbd(bot, update):
     """show keyboard to chose: show neighbors or edit own info"""
     log.info(log_msg(update))
-    
+
     if User.get_or_none(User.house, User.section, user_id=update.effective_user.id):
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
@@ -514,7 +514,8 @@ def show_house(bot, update):
         # if user want see own house and have one
         user_query = chosen_owns(update)
     neighbors = []
-    sections = User.select(User.section).where(User.house == user_query.house, User.section).distinct().order_by(User.section)
+    sections = User.select(User.section).where(User.house == user_query.house, User.section).distinct().order_by(
+        User.section)
     for i in sections:
         neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
         for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
@@ -676,38 +677,30 @@ def make_pie(prepared_data):
             total = sum(values)
             val = int(round(pct * total / 100.0))
             return val
-
         return my_autopct
 
-    # Pie chart, where the slices will be ordered and plotted counter-clockwise:
+    # pie by houses
     sizes = prepared_data['pie_values']
     labels = [f'Буд. {i + 1}' for i in range(len(sizes))]
-    # explode = (0, 0.1, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
-    
-    fig1, ax1 = plt.subplots(figsize=(9, 7.5))
-    ax1.pie(sizes, labels=labels, autopct=make_autopct(sizes), radius=1.3, pctdistance=0.8,
-            shadow=True, labeldistance=1.5)
-    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    
+    fig1, ax1 = plt.subplots(figsize=None)
+    ax1.pie(
+        sizes, labels=labels, autopct=make_autopct(sizes), radius=1.3, pctdistance=0.8, shadow=True, labeldistance=1.1
+    )
     img_path = os.path.join('img', 'charts', '1_pie.png')
     fig1.savefig(img_path)
     plt.clf()
     plt.close()
-    
-    
 
     # pie by introduced
-    values = list(prepared_data['introduced'].values())
+    sizes = list(prepared_data['introduced'].values())
     labels = list(prepared_data['introduced'].keys())
-
-    fig = plt.figure(figsize=None)
-    mpl.rcParams.update({'font.size': 16})
-    plt.title('Користувачі вказали свої дані', pad=15)
-    plt.pie(values, autopct=make_autopct(values), radius=1.3, pctdistance=0.8,
-            shadow=True, labels=labels, labeldistance=1.05)
-
+    fig2, ax2 = plt.subplots(figsize=None)
+    ax2.pie(
+        sizes, labels=labels, autopct=make_autopct(sizes), radius=1.3, pctdistance=0.8, shadow=True, labeldistance=1.1
+    )
+    ax2.set_title(label='Користувачі вказали свої дані', pad=15)
     img_path = os.path.join('img', 'charts', '2_pie.png')
-    fig.savefig(img_path)
+    fig2.savefig(img_path)
     plt.clf()
     plt.close()
 
@@ -716,7 +709,7 @@ def make_pie(prepared_data):
 def make_bars(prepared_data):
     """create bars for houses sections count"""
     log.info('this func has no update')
-    
+
     values_ = prepared_data['bars_values']
 
     def autolabel(rects, height_factor):
