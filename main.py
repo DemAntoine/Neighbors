@@ -688,7 +688,7 @@ def make_pie(prepared_data):
     )
     img_path = os.path.join('img', 'charts', '1_pie.png')
     fig1.savefig(img_path)
-    plt.clf()
+    fig1.clf()
     plt.close()
 
     # pie by introduced
@@ -701,7 +701,7 @@ def make_pie(prepared_data):
     ax2.set_title(label='Користувачі вказали свої дані', pad=15)
     img_path = os.path.join('img', 'charts', '2_pie.png')
     fig2.savefig(img_path)
-    plt.clf()
+    fig2.clf()
     plt.close()
 
 
@@ -710,30 +710,30 @@ def make_bars(prepared_data):
     """create bars for houses sections count"""
     log.info('this func has no update')
 
+    # to do: enable time.sleep(0.5) if async will make unexpected charts
+    # time.sleep(0.5)
     values_ = prepared_data['bars_values']
 
     def autolabel(rects, height_factor):
         for i, rect in enumerate(rects):
             height = rect.get_height()
             label = '%d' % int(height)
-            ax.text(rect.get_x() + rect.get_width() / 2., height_factor * height,
-                    '{}'.format(label),
-                    ha='center', va='bottom')
-
-    mpl.rcParams.update({'font.size': 15})
+            ax3.text(rect.get_x() + rect.get_width() / 2., height_factor * height,
+                     '{}'.format(label),
+                     ha='center', va='bottom')
 
     for house in values_:
         sections = [f'Сек{i[-1]}' for i in houses_arr[f'house_{house}']]
         values = [values_[house].get(int(i[-1]), 0) for i in sections]
 
-        plt.bar(sections, values)
-        ax = plt.gca()
-        ax.set_title(f'Будинок {house}')
-        autolabel(ax.patches, height_factor=0.85)
+        fig3, ax3 = plt.subplots()
+        ax3.bar(sections, values)
+        ax3.set_title(f'Будинок {house}')
+        autolabel(ax3.patches, height_factor=0.85)
 
         img_path = os.path.join('img', 'charts', f'bar{house}.png')
-        plt.savefig(img_path, dpi=200)
-        plt.clf()
+        fig3.savefig(img_path, dpi=200)
+        fig3.clf()
         plt.close()
 
 
