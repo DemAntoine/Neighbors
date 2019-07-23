@@ -665,7 +665,7 @@ def statistics_chat(bot, update):
     ChatStat(bot, update).answer(bot, update)
 
 
-@run_async
+# @run_async
 def make_pie(prepared_data):
     """create pie total by houses"""
     log.info('this func has no update')
@@ -713,6 +713,7 @@ def make_pie(prepared_data):
 def make_bars(prepared_data):
     """create bars for houses sections count"""
     log.info('this func has no update')
+    
     values_ = prepared_data['bars_values']
 
     def autolabel(rects, height_factor):
