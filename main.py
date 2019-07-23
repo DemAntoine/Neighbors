@@ -71,14 +71,14 @@ def menu_kbd(bot, update):
                     [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
                      InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
                     [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')],
-                    # [InlineKeyboardButton('Паркомісця 🚗', callback_data='parking')],
+                    [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')],
                     ]
     else:
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
                     [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
                     [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
-                    # [InlineKeyboardButton('Паркомісця 🚗', callback_data='parking')],
+                    [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')],
                     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text='<b>Меню:</b>',
@@ -380,8 +380,23 @@ def set_apartment_kbd(bot, update):
 def parking_kbd(bot, update):
     log.info(log_msg(update))
     update.callback_query.answer()
-    keyboard = [[InlineKeyboardButton(str(j + i),
-                                      callback_data=f'_park-{j + i}') for j in range(1, 8)] for i in range(0, 105, 7)]
+
+    previous_btn = InlineKeyboardButton('⏪ Попередні', callback_data='_previous_btn')
+    next_btn = InlineKeyboardButton('Наступні ⏩', callback_data='_next_btn')
+    schema = InlineKeyboardButton('Схема 🗺️', callback_data='_schema_btn')
+
+    if update.callback_query.data == '_schema_btn':
+        bot.sendDocument(chat_id=update.effective_user.id, document=open('parking.pdf', 'rb'))
+
+    if update.callback_query.data == '_next_btn':
+        keyboard = [[InlineKeyboardButton(str(j + i),
+                                          callback_data=f'_park-{j + i}') for j in range(1, 6)] for i in range(50, 100, 5)]
+        keyboard.append([previous_btn, schema, InlineKeyboardButton('Меню', callback_data='_menu')])
+    else:
+        keyboard = [[InlineKeyboardButton(str(j + i),
+                                          callback_data=f'_park-{j + i}') for j in range(1, 6)] for i in range(0, 50, 5)]
+        keyboard.append([InlineKeyboardButton('Меню', callback_data='_menu'), schema, next_btn])
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text('Паркомісця:', reply_markup=reply_markup)
 
@@ -677,6 +692,7 @@ def make_pie(prepared_data):
             total = sum(values)
             val = int(round(pct * total / 100.0))
             return val
+
         return my_autopct
 
     # pie by houses
@@ -800,7 +816,6 @@ def main():
     dispatcher.add_handler(CommandHandler("about", about_command))
 
     dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
-    # dispatcher.add_handler(MessageHandler(filt_call_err, talkative))
     dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
     dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
@@ -823,7 +838,8 @@ def main():
     dispatcher.add_handler(CallbackQueryHandler(callback=set_section_kbd, pattern='^_h'))
     dispatcher.add_handler(
         CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$|^_floor_reject$|^_section_reject$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=parking_kbd, pattern='^parking$'))
+    dispatcher.add_handler(
+        CallbackQueryHandler(callback=parking_kbd, pattern='^parking$|^_next_btn$|^_previous_btn$|^_schema_btn$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_apartment_kbd, pattern='^_f'))
 

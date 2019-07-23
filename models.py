@@ -97,5 +97,15 @@ class Jubilee(Model):
     celebrated = DateTimeField(default=time_format)
 
 
+class Parking(Model):
+    class Meta:
+        database = db
+        db_table = "parking"
+
+    user = ForeignKeyField(User, field=User.user_id)
+    parking = IntegerField(default=None, null=True)
+    created = DateTimeField(default=time_format)
+
+
 if __name__ == '__main__':
-    db.create_tables([User, Show, Jubilee], safe=True)
+    db.create_tables([User, Show, Jubilee, Parking], safe=True)
