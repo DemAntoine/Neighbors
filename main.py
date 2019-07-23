@@ -666,7 +666,7 @@ def statistics_chat(bot, update):
     ChatStat(bot, update).answer(bot, update)
 
 
-# @run_async
+@run_async
 def make_pie(prepared_data):
     """create pie total by houses"""
     log.info('this func has no update')
