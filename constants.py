@@ -131,3 +131,5 @@ houses_arr = {
     'house_3': house_3,
     'house_4': house_4,
 }
+
+WarAndPeace = 2966547

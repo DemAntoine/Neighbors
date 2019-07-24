@@ -381,12 +381,12 @@ def parking_kbd(bot, update):
     """callbackQuery handler. pattern: ^parking$"""
     log.info(log_msg(update))
     update.callback_query.answer()
-    
+
     keyboard = [[InlineKeyboardButton('Схема jpg 🔍️️', callback_data='park_schema_jpg_btn')],
                 [InlineKeyboardButton('Схема pdf 📎️️', callback_data='park_schema_pdf_btn')],
                 [InlineKeyboardButton('Моє паркомісце 🚗', callback_data='set_parking_btn')],
-                [InlineKeyboardButton('Усі власники 👥', callback_data='_previous_btn')],
-                [InlineKeyboardButton('Меню️', callback_data='_menu')]]
+                [InlineKeyboardButton('Усі власники 👥', callback_data='_parking_owners_btn')],
+                [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     if update.callback_query.message.text:
@@ -402,19 +402,19 @@ def parking_schema(bot, update):
     """callbackQuery handler. pattern: ^park_schema_jpg_btn$|^park_schema_pdf_btn$"""
     log.info(log_msg(update))
     update.callback_query.answer()
-    
-    keyboard = [[InlineKeyboardButton('️Назад', callback_data='parking')],
-                [InlineKeyboardButton('Меню️', callback_data='_menu')]]
+
+    keyboard = [[InlineKeyboardButton('Назад', callback_data='parking')],
+                [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     if update.callback_query.data == 'park_schema_jpg_btn':
         bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'parking.jpg'), 'rb'),
-                        reply_markup=reply_markup, caption='Схема парковки ЖК')
+                      reply_markup=reply_markup, caption='Схема парковки ЖК')
     elif update.callback_query.data == 'park_schema_pdf_btn':
         bot.sendDocument(chat_id=update.effective_user.id, document=open(os.path.join('img', 'parking.pdf'), 'rb'),
-                        reply_markup=reply_markup, caption='Схема парковки ЖК')
+                         reply_markup=reply_markup, caption='Схема парковки ЖК')
 
-    
+
 def set_parking(bot, update):
     """callbackQuery handler. pattern: ^set_parking_btn$"""
     log.info(log_msg(update))
@@ -422,12 +422,12 @@ def set_parking(bot, update):
 
     previous_btn = InlineKeyboardButton('⏪ Попередні', callback_data='_previous_btn')
     next_btn = InlineKeyboardButton('Наступні ⏩', callback_data='_next_btn')
-    menu_btn = InlineKeyboardButton('Меню️', callback_data='_menu')
-    back_btn = InlineKeyboardButton('️Назад', callback_data='parking')
-    
+    menu_btn = InlineKeyboardButton('Меню', callback_data='_menu')
+    back_btn = InlineKeyboardButton('Назад', callback_data='parking')
+
     query = Parking.select(Parking.parking)
     query = [i.parking for i in query]
-    
+
     keyboard = []
     if update.callback_query.data in ['set_parking_btn', '_previous_btn']:
         for i in range(0, 50, 5):
@@ -456,19 +456,39 @@ def save_parking(bot, update):
     log.info(log_msg(update))
     update.callback_query.answer()
     user_id = update.effective_user.id
-    
-    keyboard = [[InlineKeyboardButton('️Назад', callback_data='parking')],
-                [InlineKeyboardButton('Меню️', callback_data='_menu')]]
+
+    keyboard = [[InlineKeyboardButton('Назад', callback_data='parking')],
+                [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     park_place = int(update.callback_query.data.split('-')[1])
-    
-    user, created = Parking.get_or_create(user_id=user_id)
+
+    user = Parking.get_or_create(user_id=user_id)
     user.parking = park_place
     user.save()
-    
+
     bot.editMessageText(message_id=update.effective_message.message_id, text='<b>Дякую Ваші дані збережено!</b>',
-                            chat_id=update.effective_user.id, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+                        chat_id=update.effective_user.id, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
+
+def show_parking(bot, update):
+    """callbackQuery handler. pattern: ^_parking_owners_btn$"""
+    log.info(log_msg(update))
+    update.callback_query.answer()
+
+    keyboard = [[InlineKeyboardButton('Назад', callback_data='parking')],
+                [InlineKeyboardButton('Меню', callback_data='_menu')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    query = User.select(User, Parking).join(Parking).order_by(Parking.parking)
+
+    neighbors = [f'{user.href} {user.username_}     <b>{user.parking.parking}</b>\n' for user in query]
+
+    show_list = ('<b>Власники паркомісць</b>:\n'
+                 + '{}' * len(neighbors)).format(*neighbors)
+
+    bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=True, text=show_list, reply_markup=reply_markup)
 
 
 def msg_handler(bot, update):
@@ -910,10 +930,13 @@ def main():
         CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$|^_floor_reject$|^_section_reject$'))
     # parking
     dispatcher.add_handler(CallbackQueryHandler(callback=parking_kbd, pattern='^parking$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=parking_schema, pattern='^park_schema_jpg_btn$|^park_schema_pdf_btn$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=set_parking, pattern='^_next_btn$|^_previous_btn$|^set_parking_btn$'))
+    dispatcher.add_handler(
+        CallbackQueryHandler(callback=parking_schema, pattern='^park_schema_jpg_btn$|^park_schema_pdf_btn$'))
+    dispatcher.add_handler(
+        CallbackQueryHandler(callback=set_parking, pattern='^_next_btn$|^_previous_btn$|^set_parking_btn$'))
     dispatcher.add_handler(CallbackQueryHandler(callback=save_parking, pattern='^_park_place-'))
-    
+    dispatcher.add_handler(CallbackQueryHandler(callback=show_parking, pattern='^_parking_owners_btn$'))
+
     dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
     dispatcher.add_handler(CallbackQueryHandler(callback=set_apartment_kbd, pattern='^_f'))
 

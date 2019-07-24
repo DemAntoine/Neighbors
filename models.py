@@ -1,7 +1,7 @@
 from peewee import SqliteDatabase, IntegerField, Model, DateTimeField, CharField, ForeignKeyField, BooleanField
 from datetime import datetime
 
-db = SqliteDatabase('users.db')
+db = SqliteDatabase('users.db', pragmas={'foreign_keys': 1})
 
 
 def time_format():
@@ -16,12 +16,10 @@ class User(Model):
     user_id = IntegerField()
     username = CharField(null=True)
     full_name = CharField(null=True)
-
     house = IntegerField(null=True)
     section = IntegerField(null=True)
     floor = IntegerField(null=True)
     apartment = IntegerField(null=True)
-
     created = DateTimeField(default=time_format)
     updated = DateTimeField(default=None, null=True)
     
@@ -73,13 +71,10 @@ class Show(Model):
         db_table = "params"
 
     user_id = IntegerField()
-
     house = IntegerField(null=True)
     section = IntegerField(null=True)
     floor = IntegerField(null=True)
-
     owns = IntegerField(null=True)
-
     msg_apart_mode = BooleanField(null=True, default=False)
     notification_mode = CharField(null=True, default=None)
 
@@ -102,13 +97,14 @@ class Parking(Model):
         database = db
         db_table = "parking"
 
-    user_id = IntegerField()
+    user = ForeignKeyField(User, field='user_id')
     parking = IntegerField(default=None, null=True)
     created = DateTimeField(default=time_format)
-    
+
     def __str__(self):
         return f'{self.user_id} - {self.parking}'
 
 
 if __name__ == '__main__':
+    db.drop_tables([Parking])
     db.create_tables([User, Show, Jubilee, Parking], safe=True)
