@@ -102,9 +102,12 @@ class Parking(Model):
         database = db
         db_table = "parking"
 
-    user = ForeignKeyField(User, field=User.user_id)
+    user_id = IntegerField()
     parking = IntegerField(default=None, null=True)
     created = DateTimeField(default=time_format)
+    
+    def __str__(self):
+        return f'{self.user_id} - {self.parking}'
 
 
 if __name__ == '__main__':
