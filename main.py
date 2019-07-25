@@ -124,7 +124,6 @@ def building(bot, update):
 def new_neighbor_report(bot, update, created_user):
     """Send message for users who enabled notifications"""
     log.info(log_msg(update))
-    created_user_ = UserName.get(user_id=created_user.user_id)
 
     # query for users who set notifications as _notify_house
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_house')
@@ -137,7 +136,7 @@ def new_neighbor_report(bot, update, created_user):
             time.sleep(1)
         try:
             bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
-                            text=f'Новий сусід\n{created_user_} {created_user.setting_str}')
+                            text=f'Новий сусід\n{created_user.joined_str}')
         except BadRequest as err:
             bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user_id} {err}',
                             parse_mode=ParseMode.HTML)
@@ -151,7 +150,7 @@ def new_neighbor_report(bot, update, created_user):
             time.sleep(1)
         try:
             bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
-                            text=f'Новий сусід\n{created_user_} {created_user.setting_str}')
+                            text=f'Новий сусід\n{created_user.joined_str}')
         except BadRequest as err:
             bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user_id} {err}',
                             parse_mode=ParseMode.HTML)
@@ -161,9 +160,9 @@ def new_neighbor_report(bot, update, created_user):
 def user_created_report(bot, update, created_user, text):
     """when created new, or updated user - send report-message for admins"""
     log.info(log_msg(update))
-    bot.sendMessage(chat_id=ADMIN_ID, parse_mode=ParseMode.HTML, text=f'{text} {created_user.setting_str}')
+    bot.sendMessage(chat_id=ADMIN_ID, parse_mode=ParseMode.HTML, text=f'{text} {created_user.joined_str}')
     try:
-        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.setting_str}')
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.joined_str}')
     except BadRequest:
         pass
     jubilee(bot, update, created_user)
@@ -519,17 +518,11 @@ def jubilee(bot, update, created_user):
     """Check if new added user is 'hero of the day' i.e some round number in db"""
     log.info(log_msg(update))
     celebration_count = [i for i in range(0, 2000, 50)]
-    # query = User.select().where(User.house, User.section)
     query = Own.select().where(Own.house, Own.section)
 
-    # new code
-    created_user_ = UserName.get(user_id=created_user.user_id)
-
-    # check_list = [query.where(User.house == i).count() for i in range(1, 5)]
     check_list = [query.where(Own.house == i).count() for i in range(1, 5)]
     total = query.count()
-    # text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
-    text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user_} {created_user.setting_str}'
+    text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str}'
 
     for count, house in enumerate(check_list, start=1):
         if house in celebration_count:
@@ -543,7 +536,7 @@ def jubilee(bot, update, created_user):
                 return
 
     if total in celebration_count:
-        text = f'Вже зареэстровано {total} сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
+        text = f'Вже зареэстровано {total} сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str}'
         x, created = Jubilee.get_or_create(house=0, count=total)
         if created:
             try:

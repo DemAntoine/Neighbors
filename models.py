@@ -68,6 +68,10 @@ class Own(Model):
     def edit_btn_str(self):
         return f'{self.house} буд. {self.section or "?"} сек. {self.floor_ or "?"} пов. {self.apartment_}'
 
+    @property
+    def joined_str(self):
+        return f'{self.user} {self.setting_str}'
+
 
 class User(Model):
     class Meta:
