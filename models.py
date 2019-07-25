@@ -8,6 +8,32 @@ def time_format():
     return datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
 
 
+class UserName(Model):
+    class Meta:
+        database = db
+        db_table = "user_names"
+
+    user_id = IntegerField(unique=True)
+    username = CharField(null=True)
+    full_name = CharField()
+    created = DateTimeField(default=time_format)
+    updated = DateTimeField(default=time_format, null=True)
+
+    @property
+    def href(self):
+        """ inline mention of a user. works only after user write to bot first
+            <a href="tg://user?id=<user_id>">inline mention of a user</a>"""
+        return f'🔹<a href="tg://user?id={self.user_id}">{self.full_name}</a>'
+
+    @property
+    def username_(self):
+        """if no username return empty string"""
+        return '@' + self.username if self.username else ''
+        
+    def __str__(self):
+        return f'{self.href} {self.username_}'
+            
+
 class User(Model):
     class Meta:
         database = db
@@ -97,7 +123,7 @@ class Parking(Model):
         database = db
         db_table = "parking"
 
-    user = ForeignKeyField(User, field='user_id')
+    user = ForeignKeyField(UserName, field='user_id')
     parking = IntegerField(default=None, null=True)
     created = DateTimeField(default=time_format)
 
@@ -106,5 +132,5 @@ class Parking(Model):
 
 
 if __name__ == '__main__':
-    db.drop_tables([Parking])
-    db.create_tables([User, Show, Jubilee, Parking], safe=True)
+    db.drop_tables([Parking], safe=True)
+    db.create_tables([User, Show, Jubilee, Parking, UserName], safe=True)

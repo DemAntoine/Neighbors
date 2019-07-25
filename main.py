@@ -10,7 +10,7 @@ import shutil
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from datetime import datetime
-from models import User, Show, Jubilee, Parking
+from models import User, Show, Jubilee, Parking, UserName
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
 from classes import filt_integers, filt_call_err, block_filter
 from config import log, log_chat, log_msg
@@ -93,6 +93,7 @@ def is_changed(update):
     full_name = update.effective_user.full_name
 
     user, created = User.get_or_create(user_id=user_id)
+    user_name, created_ = UserName.get_or_create(user_id=user_id)
     Show.get_or_create(user_id=user_id)
 
     if not created:
@@ -104,10 +105,23 @@ def is_changed(update):
                 if user.updated:
                     user.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
                 user.save()
+            user_name.username = username
+            user_name.full_name = full_name
+            user_name.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
     else:
         user.username = update.effective_user.username
         user.full_name = full_name
         user.save()
+        
+    # to do: reformat db tables and leave here only UserName fields cheking
+    if user_name.username != username or user_name.full_name != full_name:
+        user_name.username = username
+        user_name.full_name = full_name
+        user_name.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
+        user_name.save()
+
+        
+        
 
 
 def chosen_owns(update):
@@ -438,7 +452,7 @@ def set_parking(bot, update):
             keyboard.append(row)
         keyboard.append([menu_btn, back_btn, next_btn])
     else:
-        for i in range(50, 100, 5):
+        for i in range(50, 105, 5):
             row = []
             for j in range(1, 6):
                 icon = f'🔑' if j + i in query else f''
@@ -456,17 +470,15 @@ def save_parking(bot, update):
     log.info(log_msg(update))
     update.callback_query.answer()
     user_id = update.effective_user.id
+    park_place = int(update.callback_query.data.split('-')[1])
 
     keyboard = [[InlineKeyboardButton('Назад', callback_data='parking')],
                 [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    park_place = int(update.callback_query.data.split('-')[1])
-
-    user = Parking.get_or_create(user_id=user_id)
+    user, created = Parking.get_or_create(user_id=user_id)
     user.parking = park_place
     user.save()
-
     bot.editMessageText(message_id=update.effective_message.message_id, text='<b>Дякую Ваші дані збережено!</b>',
                         chat_id=update.effective_user.id, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
@@ -480,7 +492,7 @@ def show_parking(bot, update):
                 [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    query = User.select(User, Parking).join(Parking).order_by(Parking.parking)
+    query = UserName.select(UserName, Parking).join(Parking).order_by(Parking.parking)
 
     neighbors = [f'{user.href} {user.username_}     <b>{user.parking.parking}</b>\n' for user in query]
 
