@@ -69,9 +69,10 @@ def menu_kbd(bot, update):
                 [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')], ]
 
     if Own.get_or_none(Own.house, Own.section, user=update.effective_user.id):
-        keyboard.append([InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
-                         InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')])
         keyboard[1] = [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')]
+        keyboard += [[InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
+                      InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
+                     [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')], ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text='<b>Меню:</b>', reply_markup=reply_markup,
@@ -80,24 +81,17 @@ def menu_kbd(bot, update):
 
 def is_changed(update):
     log.info(log_msg(update))
-    # check if user exist in DB (both tables). If not - create
+    # check if user exist in DB. If not - create
     username = update.effective_user.username
     user_id = update.effective_user.id
     full_name = update.effective_user.full_name
 
-    # WAS user, created = User.get_or_create(user_id=user_id)
     user, created = UserName.get_or_create(user_id=user_id)
     Show.get_or_create(user_id=user_id)
 
     if not created:
         # check if user changed own name attributes. If so - update
         if user.username != username or user.full_name != full_name:
-            # WAS for user in User.select().where(User.user_id == user_id):
-            #     user.username = username
-            #     user.full_name = full_name
-            #     if user.updated:
-            #         user.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
-            #     user.save()
             user.username = username
             user.full_name = full_name
             user.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
@@ -111,10 +105,8 @@ def is_changed(update):
 def chosen_owns(update):
     user_id = update.effective_user.id
     try:
-        # WAS user = User.select().where(User.user_id == user_id)[Show.get(user_id=user_id).owns or 0]
         user = Own.select().where(Own.user == user_id)[Show.get(user_id=user_id).owns or 0]
     except IndexError:
-        # WAS user = User.select().where(User.user_id == user_id)[0]
         user = Own.select().where(Own.user == user_id)[0]
     return user
 
@@ -132,41 +124,32 @@ def building(bot, update):
 def new_neighbor_report(bot, update, created_user):
     """Send message for users who enabled notifications"""
     log.info(log_msg(update))
+    created_user_ = UserName.get(user_id=created_user.user_id)
 
     # query for users who set notifications as _notify_house
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_house')
-    # WAS query_users = User.select(User.user_id).where(User.house == created_user.house)
     query_users = Own.select(Own.user).where(Own.house == created_user.house)
-
     query = query_params & query_users
-
-    # new code
-    created_user_ = UserName.get(user_id=created_user.user_id)
 
     # prevent telegram blocking spam
     for i, user in enumerate(query):
         if i % 29 == 0:
             time.sleep(1)
         try:
-            # WAS bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
-            #                 text=f'Новий сусід\n{created_user.joined_str()}')
             bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
                             text=f'Новий сусід\n{created_user_} {created_user.setting_str}')
         except BadRequest as err:
-            bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user} {err}',
+            bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user_id} {err}',
                             parse_mode=ParseMode.HTML)
 
     # query for users who set notifications as _notify_section
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_section')
-    # WAS query_users = query_users.where(User.section == created_user.section)
     query_users = query_users.where(Own.section == created_user.section)
     query = query_params & query_users
     for i, user in enumerate(query):
         if i % 29 == 0:
             time.sleep(1)
         try:
-            # WAS bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
-            #                 text=f'Новий сусід\n{created_user.joined_str()}')
             bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
                             text=f'Новий сусід\n{created_user_} {created_user.setting_str}')
         except BadRequest as err:
