@@ -82,8 +82,8 @@ def menu_kbd(bot, update):
                     [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')],
                     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.sendMessage(chat_id=update.effective_user.id, text='<b>Меню:</b>',
-                    reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+    bot.sendMessage(chat_id=update.effective_user.id, text='<b>Меню:</b>', reply_markup=reply_markup,
+                    parse_mode=ParseMode.HTML)
 
 
 def is_changed(update):
@@ -93,33 +93,27 @@ def is_changed(update):
     user_id = update.effective_user.id
     full_name = update.effective_user.full_name
 
-    user, created = User.get_or_create(user_id=user_id)
-    user_name, created_ = UserName.get_or_create(user_id=user_id)
+    # WAS user, created = User.get_or_create(user_id=user_id)
+    user, created = UserName.get_or_create(user_id=user_id)
     Show.get_or_create(user_id=user_id)
 
     if not created:
         # check if user changed own name attributes. If so - update
         if user.username != username or user.full_name != full_name:
-            for user in User.select().where(User.user_id == user_id):
-                user.username = username
-                user.full_name = full_name
-                if user.updated:
-                    user.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
-                user.save()
-            user_name.username = username
-            user_name.full_name = full_name
-            user_name.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
+            # WAS for user in User.select().where(User.user_id == user_id):
+            #     user.username = username
+            #     user.full_name = full_name
+            #     if user.updated:
+            #         user.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
+            #     user.save()
+            user.username = username
+            user.full_name = full_name
+            user.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
+            user.save()
     else:
-        user.username = update.effective_user.username
+        user.username = username
         user.full_name = full_name
         user.save()
-        
-    # to do: reformat db tables and leave here only UserName fields cheking
-    if user_name.username != username or user_name.full_name != full_name:
-        user_name.username = username
-        user_name.full_name = full_name
-        user_name.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
-        user_name.save()
 
 
 def chosen_owns(update):
@@ -172,14 +166,17 @@ def new_neighbor_report(bot, update, created_user):
 
     # query for users who set notifications as _notify_section
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_section')
-    query_users = query_users.where(User.section == created_user.section)
+    # WAS query_users = query_users.where(User.section == created_user.section)
+    query_users = query_users.where(Own.section == created_user.section)
     query = query_params & query_users
     for i, user in enumerate(query):
         if i % 29 == 0:
             time.sleep(1)
         try:
+            # WAS bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
+            #                 text=f'Новий сусід\n{created_user.joined_str()}')
             bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
-                            text=f'Новий сусід\n{created_user.joined_str()}')
+                            text=f'Новий сусід\n{created_user_} {created_user.setting_str}')
         except BadRequest as err:
             bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user_id} {err}',
                             parse_mode=ParseMode.HTML)
@@ -552,11 +549,14 @@ def jubilee(bot, update, created_user):
     # query = User.select().where(User.house, User.section)
     query = Own.select().where(Own.house, Own.section)
 
+    # new code
+    created_user_ = UserName.get(user_id=created_user.user_id)
+
     # check_list = [query.where(User.house == i).count() for i in range(1, 5)]
     check_list = [query.where(Own.house == i).count() for i in range(1, 5)]
     total = query.count()
     # text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
-    text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.setting_str}'
+    text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user_} {created_user.setting_str}'
 
     for count, house in enumerate(check_list, start=1):
         if house in celebration_count:

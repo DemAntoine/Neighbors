@@ -15,7 +15,7 @@ class UserName(Model):
 
     user_id = IntegerField(unique=True)
     username = CharField(null=True)
-    full_name = CharField()
+    full_name = CharField(null=True)
     created = DateTimeField(default=time_format)
     updated = DateTimeField(default=time_format, null=True)
 
@@ -37,7 +37,7 @@ class UserName(Model):
 class Own(Model):
     class Meta:
         database = db
-        db_table = "own"
+        db_table = "owns"
     
     user = ForeignKeyField(UserName, field='user_id')
     house = IntegerField(null=True)
@@ -167,5 +167,5 @@ class Parking(Model):
 
 
 if __name__ == '__main__':
-    db.drop_tables([Parking], safe=True)
+    db.drop_tables([Parking, Own], safe=True)
     db.create_tables([User, Show, Jubilee, Parking, UserName, Own], safe=True)
