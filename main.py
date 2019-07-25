@@ -8,7 +8,6 @@ import time
 import re
 import shutil
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 from datetime import datetime
 from models import User, Show, Jubilee, Parking, UserName, Own
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
@@ -107,7 +106,7 @@ def chosen_owns(update):
     try:
         user = Own.select().where(Own.user == user_id)[Show.get(user_id=user_id).owns or 0]
     except IndexError:
-        user = Own.select().where(Own.user == user_id)[0]
+        user, created = Own.get_or_create(user=user_id)
     return user
 
 
@@ -179,7 +178,7 @@ def check_owns(bot, update):
             show_section(bot, update)
             return
         else:
-            if not Own.get_or_none(user=update.effective_user.id).house:
+            if not Own.get_or_none(Own.user == update.effective_user.id, Own.house):
                 text = 'В якому Ви будинку ? 🏠 :'
                 set_houses_kbd(bot, update, text)
             else:
@@ -294,7 +293,7 @@ def set_houses_kbd(bot, update, text=''):
     log.info(log_msg(update))
     update.callback_query.answer()
     # WAS if not User.get(user_id=update.effective_user.id).house:
-    if not Own.get_or_none(user=update.effective_user.id).house:
+    if not Own.get_or_none(Own.user == update.effective_user.id, Own.house):
         text = text
     # WAS elif len(User.select().where(User.user_id == update.effective_user.id)) > 1:
     elif len(Own.select().where(Own.user == update.effective_user.id)) > 1:
