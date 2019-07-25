@@ -34,6 +34,41 @@ class UserName(Model):
         return f'{self.href} {self.username_}'
             
 
+class Own(Model):
+    class Meta:
+        database = db
+        db_table = "own"
+    
+    user = ForeignKeyField(UserName, field='user_id')
+    house = IntegerField(null=True)
+    section = IntegerField(null=True)
+    floor = IntegerField(null=True)
+    apartment = IntegerField(null=True)
+    created = DateTimeField(default=time_format)
+    updated = DateTimeField(default=None, null=True)
+    
+    @property
+    def floor_(self):
+        """for 2-level floors. split integer from db in format 11-12"""
+        return str(self.floor)[0:2] + '-' + str(self.floor)[2:4] if ((self.floor or 1) > 99) else self.floor
+    
+    @property
+    def apartment_(self):
+        """if no apartment return empty string"""
+        return f'{self.apartment} 🚪' if self.apartment else ''
+    
+    def __str__(self):
+        return f'{self.floor_ or "?"} пов. {self.apartment_}'
+    
+    @property
+    def setting_str(self):
+        return f'Будинок <b>{self.house}</b> Секція <b>{self.section or "?"}</b> поверх <b>{self.floor_ or "?"}</b> кв <b>{self.apartment_ or "?"}</b>'
+            
+    @property
+    def edit_btn_str(self):
+        return f'{self.house} буд. {self.section or "?"} сек. {self.floor_ or "?"} пов. {self.apartment_}'
+
+
 class User(Model):
     class Meta:
         database = db
@@ -133,4 +168,4 @@ class Parking(Model):
 
 if __name__ == '__main__':
     db.drop_tables([Parking], safe=True)
-    db.create_tables([User, Show, Jubilee, Parking, UserName], safe=True)
+    db.create_tables([User, Show, Jubilee, Parking, UserName, Own], safe=True)

@@ -10,7 +10,7 @@ import shutil
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from datetime import datetime
-from models import User, Show, Jubilee, Parking, UserName
+from models import User, Show, Jubilee, Parking, UserName, Own
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
 from classes import filt_integers, filt_call_err, block_filter
 from config import log, log_chat, log_msg
@@ -63,7 +63,8 @@ def menu_kbd(bot, update):
     """show keyboard to chose: show neighbors or edit own info"""
     log.info(log_msg(update))
 
-    if User.get_or_none(User.house, User.section, user_id=update.effective_user.id):
+    # WAS if User.get_or_none(User.house, User.section, user_id=update.effective_user.id):
+    if Own.get_or_none(Own.house, Own.section, user=update.effective_user.id):   
         keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
                     [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
                     [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
@@ -120,16 +121,15 @@ def is_changed(update):
         user_name.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
         user_name.save()
 
-        
-        
-
 
 def chosen_owns(update):
     user_id = update.effective_user.id
     try:
-        user = User.select().where(User.user_id == user_id)[Show.get(user_id=user_id).owns or 0]
+        # WAS user = User.select().where(User.user_id == user_id)[Show.get(user_id=user_id).owns or 0]
+        user = Own.select().where(Own.user == user_id)[Show.get(user_id=user_id).owns or 0]
     except IndexError:
-        user = User.select().where(User.user_id == user_id)[0]
+        # WAS user = User.select().where(User.user_id == user_id)[0]
+        user = Own.select().where(Own.user == user_id)[0]
     return user
 
 
@@ -142,24 +142,32 @@ def building(bot, update):
     update.callback_query.answer()
 
 
-@run_async
+# @run_async
 def new_neighbor_report(bot, update, created_user):
     """Send message for users who enabled notifications"""
     log.info(log_msg(update))
 
     # query for users who set notifications as _notify_house
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_house')
-    query_users = User.select(User.user_id).where(User.house == created_user.house)
+    # WAS query_users = User.select(User.user_id).where(User.house == created_user.house)
+    query_users = Own.select(Own.user).where(Own.house == created_user.house)
+    
     query = query_params & query_users
+    
+    # new code
+    created_user_ = UserName.get(user_id=created_user.user_id)
+    
     # prevent telegram blocking spam
     for i, user in enumerate(query):
         if i % 29 == 0:
             time.sleep(1)
         try:
+            # WAS bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
+            #                 text=f'Новий сусід\n{created_user.joined_str()}')
             bot.sendMessage(chat_id=user.user_id, parse_mode=ParseMode.HTML,
-                            text=f'Новий сусід\n{created_user.joined_str()}')
+                            text=f'Новий сусід\n{created_user_} {created_user.setting_str}')
         except BadRequest as err:
-            bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user_id} {err}',
+            bot.sendMessage(chat_id=ADMIN_ID, text=f'failed to send notification for user {user.user} {err}',
                             parse_mode=ParseMode.HTML)
 
     # query for users who set notifications as _notify_section
@@ -177,13 +185,15 @@ def new_neighbor_report(bot, update, created_user):
                             parse_mode=ParseMode.HTML)
 
 
-@run_async
+# @run_async
 def user_created_report(bot, update, created_user, text):
     """when created new, or updated user - send report-message for admins"""
     log.info(log_msg(update))
-    bot.sendMessage(chat_id=ADMIN_ID, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    # bot.sendMessage(chat_id=ADMIN_ID, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+    bot.sendMessage(chat_id=ADMIN_ID, parse_mode=ParseMode.HTML, text=f'{text} {created_user.setting_str}')
     try:
-        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+        # bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.user_created()}')
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.setting_str}')
     except BadRequest:
         pass
     jubilee(bot, update, created_user)
@@ -192,7 +202,7 @@ def user_created_report(bot, update, created_user, text):
 def check_owns(bot, update):
     """check how many records for user in db"""
     log.info(log_msg(update))
-    if not len(User.select().where(User.user_id == update.effective_user.id)) > 1:
+    if not len(Own.select().where(Own.user == update.effective_user.id)) > 1:
         if update.callback_query.data == 'house_neighbors':
             show_house(bot, update)
             return
@@ -200,12 +210,12 @@ def check_owns(bot, update):
             show_section(bot, update)
             return
         else:
-            if not User.get(user_id=update.effective_user.id).house:
+            if not Own.get_or_none(user=update.effective_user.id).house:
                 text = 'В якому Ви будинку ? 🏠 :'
                 set_houses_kbd(bot, update, text)
             else:
-                text = 'Змінюємо Ваші дані:\n' + User.get(
-                    user_id=update.effective_user.id).setting_str() + '\nВ якому Ви будинку ? 🏠 :'
+                text = 'Змінюємо Ваші дані:\n' + Own.get(
+                    user=update.effective_user.id).setting_str + '\nВ якому Ви будинку ? 🏠 :'
                 set_houses_kbd(bot, update, text)
     # if more than 1 records for user, call func for select
     else:
@@ -226,9 +236,11 @@ def select_owns(bot, update):
         text = 'Яку адресу змінити? :'
         view_edit = 'edit'
     keyboard = []
-    user_owns = User.select().where(User.user_id == update.effective_user.id)
+    # WAS user_owns = User.select().where(User.user_id == update.effective_user.id)
+    user_owns = Own.select().where(Own.user == update.effective_user.id)
     for i, j in enumerate(user_owns):
-        keyboard.append([InlineKeyboardButton(str(j.edit_btn_str()), callback_data='set_owns' + str(i) + view_edit)])
+        # WAS keyboard.append([InlineKeyboardButton(str(j.edit_btn_str()), callback_data='set_owns' + str(i) + view_edit)])
+        keyboard.append([InlineKeyboardButton(str(j.edit_btn_str), callback_data='set_owns' + str(i) + view_edit)])
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
@@ -237,9 +249,11 @@ def owns_selected(bot, update):
     """save params to db"""
     log.info(log_msg(update))
     update.callback_query.answer()
+    
     view_edit = update.callback_query.data[-13:]
     owns = [s for s in list(update.callback_query.data) if s.isdigit()]
     owns = int(''.join(owns))
+
     user = Show.get(user_id=update.effective_user.id)
     user.owns = owns
     user.save()
@@ -249,8 +263,10 @@ def owns_selected(bot, update):
     elif view_edit == 'view_my_secti':
         show_section(bot, update)
     else:
-        user = User.select().where(User.user_id == update.effective_user.id)[owns]
-        text = 'Змінюємо Ваші дані:\n' + user.setting_str() + '\nВ якому Ви будинку ? 🏠 :'
+        # WAS user = User.select().where(User.user_id == update.effective_user.id)[owns]
+        user = Own.select().where(Own.user == update.effective_user.id)[owns]
+        # WAS text = 'Змінюємо Ваші дані:\n' + user.setting_str() + '\nВ якому Ви будинку ? 🏠 :'
+        text = 'Змінюємо Ваші дані:\n' + user.setting_str + '\nВ якому Ви будинку ? 🏠 :'
         set_houses_kbd(bot, update, text)
 
 
@@ -308,9 +324,11 @@ def set_houses_kbd(bot, update, text=''):
     """show keyboard to chose its own house"""
     log.info(log_msg(update))
     update.callback_query.answer()
-    if not User.get(user_id=update.effective_user.id).house:
+    # WAS if not User.get(user_id=update.effective_user.id).house:
+    if not Own.get_or_none(user=update.effective_user.id).house:
         text = text
-    elif len(User.select().where(User.user_id == update.effective_user.id)) > 1:
+    # WAS elif len(User.select().where(User.user_id == update.effective_user.id)) > 1:
+    elif len(Own.select().where(Own.user == update.effective_user.id)) > 1:
         text = text
     else:
         text = text
@@ -531,11 +549,14 @@ def jubilee(bot, update, created_user):
     """Check if new added user is 'hero of the day' i.e some round number in db"""
     log.info(log_msg(update))
     celebration_count = [i for i in range(0, 2000, 50)]
-    query = User.select().where(User.house, User.section)
+    # query = User.select().where(User.house, User.section)
+    query = Own.select().where(Own.house, Own.section)
 
-    check_list = [query.where(User.house == i).count() for i in range(1, 5)]
+    # check_list = [query.where(User.house == i).count() for i in range(1, 5)]
+    check_list = [query.where(Own.house == i).count() for i in range(1, 5)]
     total = query.count()
-    text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
+    # text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.joined_str()}'
+    text = f'сусідів 🎇 🎈 🎉 🎆 🍹\nВітаємо\n{created_user.setting_str}'
 
     for count, house in enumerate(check_list, start=1):
         if house in celebration_count:
@@ -631,12 +652,19 @@ def show_house(bot, update):
         # if user want see own house and have one
         user_query = chosen_owns(update)
     neighbors = []
-    sections = User.select(User.section).where(User.house == user_query.house, User.section).distinct().order_by(
-        User.section)
+    
+    # WAS sections = User.select(User.section).where(User.house == user_query.house, User.section).distinct().order_by(
+    #     User.section)
+    sections = Own.select(Own.section).where(Own.house == user_query.house, Own.section).distinct().order_by(
+        Own.section)
+
     for i in sections:
         neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
-        for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
-            neighbors.append(str(user) + '\n')
+        
+        # WAS for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
+        for user in UserName.select(UserName, Own).join(Own).where(Own.house == user_query.house, Own.section == i.section).order_by(Own.floor):
+            neighbors.append(f'{user}   {user.own}\n')
+            
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
@@ -662,10 +690,14 @@ def show_section(bot, update, some_section=False):
     else:
         user_query = Show.get(user_id=update.effective_user.id)
 
-    query = User.select().where(
-        User.house == user_query.house,
-        User.section == user_query.section).order_by(User.floor)
-    neighbors = [str(user) + '\n' for user in query]
+    # WAS query = User.select().where(
+    #     User.house == user_query.house,
+    #     User.section == user_query.section).order_by(User.floor)
+    query = UserName.select(UserName, Own).join(Own).where(
+        Own.house == user_query.house, Own.section == user_query.section).order_by(Own.floor)
+        
+        
+    neighbors = [f'{user}   {user.own}\n' for user in query]
 
     show_list = ('<b>Мешканці секції № ' + str(user_query.section) + ' Будинку № ' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
