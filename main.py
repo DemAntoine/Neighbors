@@ -62,25 +62,17 @@ def about_command(bot, update):
 def menu_kbd(bot, update):
     """show keyboard to chose: show neighbors or edit own info"""
     log.info(log_msg(update))
+    keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
+                [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
+                [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
+                [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
+                [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')], ]
 
-    # WAS if User.get_or_none(User.house, User.section, user_id=update.effective_user.id):
-    if Own.get_or_none(Own.house, Own.section, user=update.effective_user.id):   
-        keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                    [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')],
-                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
-                    [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
-                    [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
-                     InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
-                    [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')],
-                    [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')],
-                    ]
-    else:
-        keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                    [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
-                    [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
-                    [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
-                    [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')],
-                    ]
+    if Own.get_or_none(Own.house, Own.section, user=update.effective_user.id):
+        keyboard.append([InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
+                         InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')])
+        keyboard[1] = [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.sendMessage(chat_id=update.effective_user.id, text='<b>Меню:</b>', reply_markup=reply_markup,
                     parse_mode=ParseMode.HTML)
@@ -145,12 +137,12 @@ def new_neighbor_report(bot, update, created_user):
     query_params = Show.select(Show.user_id).where(Show.notification_mode == '_notify_house')
     # WAS query_users = User.select(User.user_id).where(User.house == created_user.house)
     query_users = Own.select(Own.user).where(Own.house == created_user.house)
-    
+
     query = query_params & query_users
-    
+
     # new code
     created_user_ = UserName.get(user_id=created_user.user_id)
-    
+
     # prevent telegram blocking spam
     for i, user in enumerate(query):
         if i % 29 == 0:
@@ -246,7 +238,7 @@ def owns_selected(bot, update):
     """save params to db"""
     log.info(log_msg(update))
     update.callback_query.answer()
-    
+
     view_edit = update.callback_query.data[-13:]
     owns = [s for s in list(update.callback_query.data) if s.isdigit()]
     owns = int(''.join(owns))
@@ -652,7 +644,7 @@ def show_house(bot, update):
         # if user want see own house and have one
         user_query = chosen_owns(update)
     neighbors = []
-    
+
     # WAS sections = User.select(User.section).where(User.house == user_query.house, User.section).distinct().order_by(
     #     User.section)
     sections = Own.select(Own.section).where(Own.house == user_query.house, Own.section).distinct().order_by(
@@ -660,11 +652,12 @@ def show_house(bot, update):
 
     for i in sections:
         neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
-        
+
         # WAS for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
-        for user in UserName.select(UserName, Own).join(Own).where(Own.house == user_query.house, Own.section == i.section).order_by(Own.floor):
+        for user in UserName.select(UserName, Own).join(Own).where(Own.house == user_query.house,
+                                                                   Own.section == i.section).order_by(Own.floor):
             neighbors.append(f'{user}   {user.own}\n')
-            
+
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
@@ -695,8 +688,7 @@ def show_section(bot, update, some_section=False):
     #     User.section == user_query.section).order_by(User.floor)
     query = UserName.select(UserName, Own).join(Own).where(
         Own.house == user_query.house, Own.section == user_query.section).order_by(Own.floor)
-        
-        
+
     neighbors = [f'{user}   {user.own}\n' for user in query]
 
     show_list = ('<b>Мешканці секції № ' + str(user_query.section) + ' Будинку № ' + str(user_query.house) + '</b>:\n'
