@@ -587,7 +587,7 @@ def show_house(bot, update):
         for user in query.where(Own.section == i.section):
             neighbors.append(f'{user.user}   {user}\n')
 
-    show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
+    show_list = (f'<b>Мешканці будинку № {user_query.house}</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
     if len(show_list) < 6200:
@@ -664,39 +664,44 @@ def greeting(bot, update):
 def prepare_data():
     """Create show_list (string) for statistic message, and pie_values (list) for chart"""
     log.info('this func has no update')
-    query = User.select()
-    query_with = query.where(User.house, User.section)
-    query_without = query.where(User.house.is_null() | User.section.is_null())
-    houses = query_with.select(User.house).distinct().order_by(User.house)
 
+    query_with = Own.select().where(Own.house, Own.section)
+    houses = query_with.select(Own.house).distinct().order_by(Own.house)
+    
+    ############################################################################
+    total_users = UserName.select().count()
+    intro_yes = Own.select(Own.user).where(Own.house, Own.section).distinct().count()
+    intro_not = total_users - intro_yes
+    ############################################################################
+    
     # did users indicate their info
-    introduced = {'Yes': query_with.count(), 'No': query_without.count()}
+    introduced = {'Yes': intro_yes, 'No': intro_not}
+
     # last 3 joined users
-    last_3_users = list(reversed(query_with.order_by(User.id)[-3:]))
+    last_3_users = list(reversed(query_with.order_by(Own.id)[-3:]))
 
     neighbors = []
     pie_values = []
     bars_values = {}
     for house_ in houses:
-        count = query_with.where(User.house == house_.house).count()
+        count = query_with.where(Own.house == house_.house).count()
         pie_values.append(count)
         neighbors.append('\n' + '🏠 <b>Будинок '.rjust(30, ' ') + f'{house_.house}</b> <code>({count})</code>\n')
-        sections = query_with.select(User.section).where(User.house == house_.house).distinct().order_by(User.section)
+        sections = query_with.select(Own.section).where(Own.house == house_.house).distinct().order_by(Own.section)
         section_dict = {}
         for section_ in sections:
-            count = query_with.where(User.house == house_.house, User.section == section_.section).count()
+            count = query_with.where(Own.house == house_.house, Own.section == section_.section).count()
             neighbors.append(f'Секція{section_.section} <code>({count})</code>\n')
             section_dict[section_.section] = count
         bars_values[house_.house] = section_dict
 
-    show_list = (f'<b>Всього користувачів: {query.count()}</b>\n'
-                 f'<i>Дані вказані {introduced["Yes"]}</i>\n'
-                 f'<i>Дані не вказані {introduced["No"]}</i>\n'
+    show_list = (f'<b>Всього користувачів: {total_users}</b>\n'
+                 f'<i>Дані вказані {intro_yes}</i>\n'
+                 f'<i>Дані не вказані {intro_not}</i>\n'
                  + '{}' * len(neighbors)).format(*neighbors) + '\n<b>Нові користувачі</b>'
 
-    # add to msg last 3 joined users
-    for i in range(len(last_3_users)):
-        show_list += f'\n{last_3_users[i].joined_str()}'
+    for i in last_3_users:
+        show_list += f'\n{i.joined_str}'
 
     return {'show_list': show_list, 'pie_values': pie_values, 'bars_values': bars_values, 'introduced': introduced}
 
