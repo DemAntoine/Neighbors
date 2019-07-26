@@ -110,7 +110,7 @@ def chosen_owns(update):
     return user
 
 
-# @run_async
+@run_async
 def new_neighbor_report(bot, update, created_user):
     """Send message for users who enabled notifications"""
     log.info(log_msg(update))
@@ -145,7 +145,7 @@ def new_neighbor_report(bot, update, created_user):
                             parse_mode=ParseMode.HTML)
 
 
-# @run_async
+@run_async
 def user_created_report(bot, update, created_user, text):
     """when created new, or updated user - send report-message for admins"""
     log.info(log_msg(update))
@@ -665,32 +665,29 @@ def prepare_data():
     """Create show_list (string) for statistic message, and pie_values (list) for chart"""
     log.info('this func has no update')
 
-    query_with = Own.select().where(Own.house, Own.section)
-    houses = query_with.select(Own.house).distinct().order_by(Own.house)
-    
-    ############################################################################
+    query = Own.select().where(Own.house, Own.section)
+    houses = query.select(Own.house).distinct().order_by(Own.house)
     total_users = UserName.select().count()
+
+    # did users indicate their info
     intro_yes = Own.select(Own.user).where(Own.house, Own.section).distinct().count()
     intro_not = total_users - intro_yes
-    ############################################################################
-    
-    # did users indicate their info
     introduced = {'Yes': intro_yes, 'No': intro_not}
 
     # last 3 joined users
-    last_3_users = list(reversed(query_with.order_by(Own.id)[-3:]))
+    last_3_users = list(reversed(query.order_by(Own.id)[-3:]))
 
     neighbors = []
     pie_values = []
     bars_values = {}
     for house_ in houses:
-        count = query_with.where(Own.house == house_.house).count()
+        count = query.where(Own.house == house_.house).count()
         pie_values.append(count)
-        neighbors.append('\n' + '🏠 <b>Будинок '.rjust(30, ' ') + f'{house_.house}</b> <code>({count})</code>\n')
-        sections = query_with.select(Own.section).where(Own.house == house_.house).distinct().order_by(Own.section)
+        neighbors.append(f'\n{"🏠 <b>Будинок".rjust(30, " ")} {house_.house}</b> <code>({count})</code>\n')
+        sections = query.select(Own.section).where(Own.house == house_.house).distinct().order_by(Own.section)
         section_dict = {}
         for section_ in sections:
-            count = query_with.where(Own.house == house_.house, Own.section == section_.section).count()
+            count = query.where(Own.house == house_.house, Own.section == section_.section).count()
             neighbors.append(f'Секція{section_.section} <code>({count})</code>\n')
             section_dict[section_.section] = count
         bars_values[house_.house] = section_dict
@@ -715,8 +712,8 @@ def statistics_kbd(bot, update):
                 [InlineKeyboardButton('Чат 💬', callback_data='statistics_chat')],
                 [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text='<b>Статистика</b>',
-                        message_id=update.effective_message.message_id, reply_markup=reply_markup)
+    bot.editMessageText('<b>Меню</b> <code>Статистика</code>', reply_markup=reply_markup, parse_mode=ParseMode.HTML,
+                        message_id=update.effective_message.message_id, chat_id=update.effective_user.id)
 
 
 def statistics_common(bot, update):
@@ -871,54 +868,49 @@ def building(bot, update):
 def main():
     updater = Updater(KEY)
 
-    dispatcher = updater.dispatcher
+    dp = updater.dispatcher
     # group filters
-    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
-    dispatcher.add_handler(MessageHandler((Filters.command & Filters.group), del_command))
-    dispatcher.add_handler(MessageHandler((Filters.group & block_filter), del_msg))
-    dispatcher.add_handler(MessageHandler((Filters.text & Filters.group), group_chat_logging))
+    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, greeting))
+    dp.add_handler(MessageHandler((Filters.command & Filters.group), del_command))
+    dp.add_handler(MessageHandler((Filters.group & block_filter), del_msg))
+    dp.add_handler(MessageHandler((Filters.text & Filters.group), group_chat_logging))
     # commands
-    dispatcher.add_handler(CommandHandler("start", start_command))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("about", about_command))
+    dp.add_handler(CommandHandler("start", start_command))
+    dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("about", about_command))
 
-    # dispatcher.add_handler(MessageHandler(filt_integers, apartment_save))
-    dispatcher.add_handler(MessageHandler(filt_integers, save_user_data))
-    dispatcher.add_handler(MessageHandler(Filters.text, msg_handler))
-    dispatcher.add_handler(CallbackQueryHandler(callback=start_command, pattern='^_menu$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=building, pattern='^building$'))
+    # dp.add_handler(MessageHandler(filt_integers, apartment_save))
+    dp.add_handler(MessageHandler(filt_integers, save_user_data))
+    dp.add_handler(MessageHandler(Filters.text, msg_handler))
+    dp.add_handler(CallbackQueryHandler(start_command, pattern='^_menu$'))
+    dp.add_handler(CallbackQueryHandler(building, pattern='^building$'))
     # statistics
-    dispatcher.add_handler(CallbackQueryHandler(callback=statistics_kbd, pattern='^statistics$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=statistics_common, pattern='^statistics_common$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=statistics_chat, pattern='^statistics_chat$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=charts, pattern='^charts$'))
+    dp.add_handler(CallbackQueryHandler(statistics_kbd, pattern='^statistics$'))
+    dp.add_handler(CallbackQueryHandler(statistics_common, pattern='^statistics_common$'))
+    dp.add_handler(CallbackQueryHandler(statistics_chat, pattern='^statistics_chat$'))
+    dp.add_handler(CallbackQueryHandler(charts, pattern='^charts$'))
 
-    dispatcher.add_handler(CallbackQueryHandler(callback=notifications_kbd, pattern='^notifications$'))
-    dispatcher.add_handler(
-        CallbackQueryHandler(callback=notifications_save, pattern='^_notify_section$|^_notify_house$|^_notify_OFF$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=houses_kbd, pattern='^show$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=show_house, pattern='^show_this_house$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=section_kbd, pattern='^p_h'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=save_params, pattern='^p_s'))
-    dispatcher.add_handler(
-        CallbackQueryHandler(callback=check_owns, pattern='^edit$|^house_neighbors$|section_neighbors'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=owns_selected, pattern='^set_owns'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=set_section_kbd, pattern='^_h'))
-    dispatcher.add_handler(
-        CallbackQueryHandler(callback=save_user_data, pattern='^_apart_reject$|^_section_reject$'))
+    dp.add_handler(CallbackQueryHandler(notifications_kbd, pattern='^notifications$'))
+    dp.add_handler(CallbackQueryHandler(notifications_save, pattern='^_notify_section$|^_notify_house$|^_notify_OFF$'))
+    dp.add_handler(CallbackQueryHandler(houses_kbd, pattern='^show$'))
+    dp.add_handler(CallbackQueryHandler(show_house, pattern='^show_this_house$'))
+    dp.add_handler(CallbackQueryHandler(section_kbd, pattern='^p_h'))
+    dp.add_handler(CallbackQueryHandler(save_params, pattern='^p_s'))
+    dp.add_handler(CallbackQueryHandler(check_owns, pattern='^edit$|^house_neighbors$|section_neighbors'))
+    dp.add_handler(CallbackQueryHandler(owns_selected, pattern='^set_owns'))
+    dp.add_handler(CallbackQueryHandler(set_section_kbd, pattern='^_h'))
+    dp.add_handler(CallbackQueryHandler(save_user_data, pattern='^_apart_reject$|^_section_reject$'))
     # parking
-    dispatcher.add_handler(CallbackQueryHandler(callback=parking_kbd, pattern='^parking$'))
-    dispatcher.add_handler(
-        CallbackQueryHandler(callback=parking_schema, pattern='^park_schema_jpg_btn$|^park_schema_pdf_btn$'))
-    dispatcher.add_handler(
-        CallbackQueryHandler(callback=set_parking, pattern='^_next_btn$|^_previous_btn$|^set_parking_btn$'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=save_parking, pattern='^_park_place-'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=show_parking, pattern='^_parking_owners_btn$'))
+    dp.add_handler(CallbackQueryHandler(parking_kbd, pattern='^parking$'))
+    dp.add_handler(CallbackQueryHandler(parking_schema, pattern='^park_schema_jpg_btn$|^park_schema_pdf_btn$'))
+    dp.add_handler(CallbackQueryHandler(set_parking, pattern='^_next_btn$|^_previous_btn$|^set_parking_btn$'))
+    dp.add_handler(CallbackQueryHandler(save_parking, pattern='^_park_place-'))
+    dp.add_handler(CallbackQueryHandler(show_parking, pattern='^_parking_owners_btn$'))
 
-    dispatcher.add_handler(CallbackQueryHandler(callback=set_floor_kbd, pattern='^_s'))
-    dispatcher.add_handler(CallbackQueryHandler(callback=set_apartment_kbd, pattern='^_f'))
+    dp.add_handler(CallbackQueryHandler(set_floor_kbd, pattern='^_s'))
+    dp.add_handler(CallbackQueryHandler(set_apartment_kbd, pattern='^_f'))
 
-    dispatcher.add_error_handler(catch_err)
+    dp.add_error_handler(catch_err)
 
     updater.start_polling()
     updater.idle()
