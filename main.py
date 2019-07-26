@@ -565,7 +565,7 @@ def save_user_data(bot, update):
 
 
 def show_house(bot, update):
-    """callbackQuery handler """
+    """ """
     log.info(log_msg(update))
     update.callback_query.answer()
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
@@ -576,20 +576,16 @@ def show_house(bot, update):
     else:
         # if user want see own house and have one
         user_query = chosen_owns(update)
+        
     neighbors = []
-
-    # WAS sections = User.select(User.section).where(User.house == user_query.house, User.section).distinct().order_by(
-    #     User.section)
     sections = Own.select(Own.section).where(Own.house == user_query.house, Own.section).distinct().order_by(
         Own.section)
+    query = Own.select().where(Own.house == user_query.house, Own.section).order_by(Own.floor)
 
     for i in sections:
-        neighbors.append('\n' + '📭 <b>Секція '.rjust(30, ' ') + str(i.section) + '</b>' + '\n')
-
-        # WAS for user in User.select().where(User.house == user_query.house, User.section == i.section).order_by(User.floor):
-        for user in UserName.select(UserName, Own).join(Own).where(Own.house == user_query.house,
-                                                                   Own.section == i.section).order_by(Own.floor):
-            neighbors.append(f'{user}   {user.own}\n')
+        neighbors.append(f'\n{"📭 <b>Секція".rjust(30, " ")} {i.section}</b>\n')
+        for user in query.where(Own.section == i.section):
+            neighbors.append(f'{user.user}   {user}\n')
 
     show_list = ('<b>Мешканці будинку №' + str(user_query.house) + '</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
