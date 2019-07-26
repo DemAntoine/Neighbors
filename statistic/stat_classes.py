@@ -1,9 +1,8 @@
-from config import log, log_msg
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, InputMediaPhoto
+from telegram import ParseMode, InputMediaPhoto
 from statistic import Stat
 import os
 import re
-
+from constants import WarAndPeace
 
 class CommonStat(Stat):
     def __init__(self, bot, update):
@@ -65,8 +64,10 @@ class ChatStat(Stat):
         top_chars_avg_min = [template.format(user[0], user[1][2], round(user[1][0] / user[1][1])) + '\n' for user in by_chars_avg[:10]]
         top_chars_avg_max = [template.format(user[0], user[1][2], round(user[1][0] / user[1][1])) + '\n' for user in by_chars_avg[-10:]]
         top_chars_avg_max.reverse()
+        total_chars = sum([i[0] for i in data.values()])
 
-        show_list = ('<b>Лідери по кількості знаків</b>\n' + '{}'
+        show_list = ('<i>Вже написано {:.2%} роману Війна і Мир</i>'.format(total_chars/WarAndPeace) + '\n\n' +
+                     '<b>Лідери по кількості знаків</b>\n' + '{}'
                      * len(top_chars)).format(*top_chars) + '\n' + \
                     ('<b>Лідери по кількості повідомлень</b>\n' + '{}'
                      * len(top_msgs)).format(*top_msgs) + '\n' + \
