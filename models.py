@@ -107,6 +107,7 @@ class Parking(Model):
 
     user = ForeignKeyField(UserName, field='user_id')
     parking = IntegerField(default=None, null=True)
+    house = IntegerField(default=None, null=True)
     created = DateTimeField(default=time_format)
 
     def __str__(self):
