@@ -3,12 +3,19 @@ from statistic import Stat
 import os
 import re
 from constants import WarAndPeace
+from models import Own
+
 
 class CommonStat(Stat):
     def __init__(self, bot, update):
         super().__init__(bot, update)
 
     def answer(self, bot, update, show_list):
+        if not Own.get_or_none(Own.house, Own.section, user=update.effective_user.id):
+            for i in range(1, 6):
+                show_list = show_list.replace(show_list.split('\n')[-i], '')
+            show_list = show_list[:-5]
+
         bot.editMessageText(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML, text=show_list,
                             message_id=update.effective_message.message_id, reply_markup=self.reply_markup)
 
