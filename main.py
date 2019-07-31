@@ -9,7 +9,7 @@ import re
 import shutil
 import matplotlib.pyplot as plt
 from datetime import datetime
-from models import User, Show, Jubilee, Parking, UserName, Own
+from models import Show, Jubilee, Parking, UserName, Own
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
 from classes import filt_integers, filt_call_err, block_filter
 from config import log, log_chat, log_msg
@@ -19,6 +19,21 @@ from statistic.stat_classes import CommonStat, Charts, ChatStat
 KEY = sys.argv[1]
 ADMIN_ID = sys.argv[2]
 print('key ...' + KEY[-6:] + ' successfully used')
+
+
+def restricted(func):
+    """Restrict access to func"""
+    
+    @wraps(func)
+    def command_func(*args, **kwargs):
+        bot, update = args
+        
+        if not Own.get_or_none(Own.house, Own.section, user=update.effective_user.id):
+            return
+        return func(bot, update, **kwargs)
+
+    return command_func
+
 
 
 def send_typing_action(func):
@@ -61,20 +76,22 @@ def about_command(bot, update):
 def menu_kbd(bot, update):
     """show keyboard to chose: show neighbors or edit own info"""
     log.info(log_msg(update))
-    keyboard = [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
-                [InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
+    text = '<b>Меню:</b>\n<i>Додайте свої дані, щоб мати доступ до перегляду сусідів, та інших функцій</i>'
+    keyboard = [[InlineKeyboardButton('Додати свої дані 📝', callback_data='edit')],
                 [InlineKeyboardButton('Хід будівництва 🏗️', callback_data='building')],
-                [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')],
-                [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')], ]
+                [InlineKeyboardButton('Статистика 📊️', callback_data='statistics')], ]
 
     if Own.get_or_none(Own.house, Own.section, user=update.effective_user.id):
-        keyboard[1] = [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')]
-        keyboard += [[InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
+        text = text.split('\n')[0]
+        keyboard[0] = [InlineKeyboardButton('Змінити свої дані ✏', callback_data='edit')]
+        keyboard += [[InlineKeyboardButton('Дивитись сусідів 👫', callback_data='show')],
+                    [InlineKeyboardButton('Мій будинок 🏠', callback_data='house_neighbors'),
                       InlineKeyboardButton('Моя секція 🔢', callback_data='section_neighbors')],
+                      [InlineKeyboardButton('Паркомісця 🅿️', callback_data='parking')],
                      [InlineKeyboardButton('Сповіщення 🔔', callback_data='notifications')], ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.sendMessage(chat_id=update.effective_user.id, text='<b>Меню:</b>', reply_markup=reply_markup,
+    bot.sendMessage(chat_id=update.effective_user.id, text=text, reply_markup=reply_markup,
                     parse_mode=ParseMode.HTML)
 
 
@@ -84,7 +101,7 @@ def is_changed(update):
     username = update.effective_user.username
     user_id = update.effective_user.id
     full_name = update.effective_user.full_name
-
+    
     user, created = UserName.get_or_create(user_id=user_id)
     Show.get_or_create(user_id=user_id)
 
@@ -149,9 +166,9 @@ def new_neighbor_report(bot, update, created_user):
 def user_created_report(bot, update, created_user, text):
     """when created new, or updated user - send report-message for admins"""
     log.info(log_msg(update))
-    bot.sendMessage(chat_id=ADMIN_ID, parse_mode=ParseMode.HTML, text=f'{text} {created_user.joined_str}')
+    bot.sendMessage(chat_id=ADMIN_ID, parse_mode=ParseMode.HTML, text=f'{text} {created_user.joined_str}\n{created_user.user_id}')
     try:
-        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.joined_str}')
+        bot.sendMessage(chat_id=422485737, parse_mode=ParseMode.HTML, text=f'{text} {created_user.joined_str}\n{created_user.user_id}')
     except BadRequest:
         pass
     jubilee(bot, update, created_user)
@@ -365,6 +382,7 @@ def set_apartment_kbd(bot, update):
     update.callback_query.message.reply_text(text=text, reply_markup=reply_markup)
 
 
+@restricted
 def parking_kbd(bot, update):
     """callbackQuery handler. pattern: ^parking$"""
     log.info(log_msg(update))
