@@ -410,13 +410,13 @@ def parking_house_kbd(bot, update):
     log.info(log_msg(update))
     update.callback_query.answer()
     text = '<b>Паркінг якого будинку? :</b>'
-    
+
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='_parkhouse-1'),
                  InlineKeyboardButton('Будинок 2', callback_data='_parkhouse-2')],
                 [InlineKeyboardButton('Будинок 3', callback_data='_parkhouse-3'),
                  InlineKeyboardButton('Будинок 4', callback_data='_parkhouse-4')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     bot.editMessageText(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML,
                         message_id=update.effective_message.message_id, chat_id=update.effective_user.id)
 
@@ -427,16 +427,21 @@ def parking_schema(bot, update):
     log.info(log_msg(update))
     update.callback_query.answer()
 
-    keyboard = [[InlineKeyboardButton('Назад', callback_data='parking')],
-                [InlineKeyboardButton('Меню', callback_data='_menu')]]
+    keyboard = [[InlineKeyboardButton('Назад', callback_data='parking'),
+                InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     if update.callback_query.data == 'park_schema_jpg_btn':
-        bot.sendPhoto(chat_id=update.effective_user.id, photo=open(os.path.join('img', 'parking.jpg'), 'rb'),
-                      reply_markup=reply_markup, caption='Схема парковки ЖК')
+        media = [InputMediaPhoto(open(os.path.join('img', 'parking_h_1.jpg'), 'rb')),
+                 InputMediaPhoto(open(os.path.join('img', 'parking_h_2.jpg'), 'rb')), ]
+        bot.sendMediaGroup(chat_id=update.effective_user.id, media=media)
+        bot.sendMessage(chat_id=update.effective_user.id, parse_mode=ParseMode.HTML,
+                        reply_markup=reply_markup, text='<b>Схеми паркінгу будинків 1 та 2:</b>')
     elif update.callback_query.data == 'park_schema_pdf_btn':
-        bot.sendDocument(chat_id=update.effective_user.id, document=open(os.path.join('img', 'parking.pdf'), 'rb'),
-                         reply_markup=reply_markup, caption='Схема парковки ЖК')
+        bot.sendDocument(chat_id=update.effective_user.id, document=open(os.path.join('img', 'parking_h_1.pdf'), 'rb'),
+                         caption='Схема Паркінгу будинку 1')
+        bot.sendDocument(chat_id=update.effective_user.id, document=open(os.path.join('img', 'parking_h_2.pdf'), 'rb'),
+                         reply_markup=reply_markup, caption='Схема Паркінгу будинку 2')
 
 
 # to do: refactor or create package parking
@@ -446,7 +451,7 @@ def set_parking(bot, update):
     update.callback_query.answer()
     user_id = update.effective_user.id
     user, created = Parking.get_or_create(user_id=user_id)
-    
+
     if '_parkhouse-' in update.callback_query.data:
         parking_house = int(update.callback_query.data.split('-')[1])
         user.house = parking_house
@@ -513,13 +518,13 @@ def show_parking(bot, update):
 
     parkings = Parking.select(Parking.house).distinct().order_by(Parking.house)
     query = Parking.select().order_by(Parking.parking)
-    
+
     neighbors = []
     for i in parkings:
         neighbors.append(f'\n{"<b>Паркінг будинку №".rjust(30, " ")} {i.house}</b>\n')
         for user in query.where(Parking.house == i.house):
             neighbors.append(f'{user.user} <b>{user.parking}</b>\n')
-    
+
     show_list = ('<b>Власники паркомісць</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
