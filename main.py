@@ -477,6 +477,7 @@ def save_parking(bot, update):
                         chat_id=update.effective_user.id, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
+@restricted
 def show_parking(bot, update):
     """callbackQuery handler. pattern: ^_parking_owners_btn$"""
     log.info(log_msg(update))
@@ -486,8 +487,16 @@ def show_parking(bot, update):
                 [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
+    parkings = Parking.select(Parking.house).distinct().order_by(Parking.house)
     query = Parking.select().order_by(Parking.parking)
-    neighbors = [f'{user.user} <b>{user.parking}</b>\n' for user in query]
+    
+    neighbors = []
+    for i in parkings:
+        neighbors.append(f'\n{"<b>Паркінг будинку №".rjust(30, " ")} {i.house}</b>\n')
+        for user in query.where(Parking.house == i.house):
+            neighbors.append(f'{user.user} <b>{user.parking}</b>\n')
+    
+    
     show_list = ('<b>Власники паркомісць</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
 
@@ -901,7 +910,6 @@ def main():
     dp.add_handler(CommandHandler("help", help_command))
     dp.add_handler(CommandHandler("about", about_command))
 
-    # dp.add_handler(MessageHandler(filt_integers, apartment_save))
     dp.add_handler(MessageHandler(filt_integers, save_user_data))
     dp.add_handler(MessageHandler(Filters.text, msg_handler))
     dp.add_handler(CallbackQueryHandler(start_command, pattern='^_menu$'))
