@@ -405,6 +405,22 @@ def parking_kbd(bot, update):
                         text='Меню <code>Паркомісця</code>')
 
 
+def parking_house_kbd(bot, update):
+    """callbackQuery handler. pattern: ^set_parking_btn$"""
+    log.info(log_msg(update))
+    update.callback_query.answer()
+    text = '<b>Паркінг якого будинку? :</b>'
+    
+    keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='_parkhouse-1'),
+                 InlineKeyboardButton('Будинок 2', callback_data='_parkhouse-2')],
+                [InlineKeyboardButton('Будинок 3', callback_data='_parkhouse-3'),
+                 InlineKeyboardButton('Будинок 4', callback_data='_parkhouse-4')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    bot.editMessageText(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML,
+                        message_id=update.effective_message.message_id, chat_id=update.effective_user.id)
+
+
 @send_typing_action
 def parking_schema(bot, update):
     """callbackQuery handler. pattern: ^park_schema_jpg_btn$|^park_schema_pdf_btn$"""
@@ -423,21 +439,29 @@ def parking_schema(bot, update):
                          reply_markup=reply_markup, caption='Схема парковки ЖК')
 
 
+# to do: refactor or create package parking
 def set_parking(bot, update):
-    """callbackQuery handler. pattern: ^set_parking_btn$"""
+    """callbackQuery handler. pattern: ^_next_btn$|^_previous_btn$|^_parkhouse-"""
     log.info(log_msg(update))
     update.callback_query.answer()
+    user_id = update.effective_user.id
+    user, created = Parking.get_or_create(user_id=user_id)
+    
+    if '_parkhouse-' in update.callback_query.data:
+        parking_house = int(update.callback_query.data.split('-')[1])
+        user.house = parking_house
+        user.save()
 
     previous_btn = InlineKeyboardButton('⏪ Попередні', callback_data='_previous_btn')
     next_btn = InlineKeyboardButton('Наступні ⏩', callback_data='_next_btn')
     menu_btn = InlineKeyboardButton('Меню', callback_data='_menu')
     back_btn = InlineKeyboardButton('Назад', callback_data='parking')
 
-    query = Parking.select(Parking.parking)
+    query = Parking.select().where(Parking.house == user.house)
     query = [i.parking for i in query]
 
     keyboard = []
-    if update.callback_query.data in ['set_parking_btn', '_previous_btn']:
+    if '_parkhouse-' in update.callback_query.data or '_previous_btn' in update.callback_query.data:
         for i in range(0, 50, 5):
             row = []
             for j in range(1, 6):
@@ -456,7 +480,7 @@ def set_parking(bot, update):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.editMessageText(message_id=update.effective_message.message_id, text='Вкажіть Ваше паркомісце\n',
-                        chat_id=update.effective_user.id, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+                        chat_id=user_id, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
 def save_parking(bot, update):
@@ -470,11 +494,11 @@ def save_parking(bot, update):
                 [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    user, created = Parking.get_or_create(user_id=user_id)
+    user = Parking.get(user_id=user_id)
     user.parking = park_place
     user.save()
     bot.editMessageText(message_id=update.effective_message.message_id, text='<b>Дякую Ваші дані збережено!</b>',
-                        chat_id=update.effective_user.id, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+                        chat_id=user_id, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
 @restricted
@@ -495,7 +519,6 @@ def show_parking(bot, update):
         neighbors.append(f'\n{"<b>Паркінг будинку №".rjust(30, " ")} {i.house}</b>\n')
         for user in query.where(Parking.house == i.house):
             neighbors.append(f'{user.user} <b>{user.parking}</b>\n')
-    
     
     show_list = ('<b>Власники паркомісць</b>:\n'
                  + '{}' * len(neighbors)).format(*neighbors)
@@ -932,8 +955,9 @@ def main():
     dp.add_handler(CallbackQueryHandler(save_user_data, pattern='^_apart_reject$|^_section_reject$'))
     # parking
     dp.add_handler(CallbackQueryHandler(parking_kbd, pattern='^parking$'))
+    dp.add_handler(CallbackQueryHandler(parking_house_kbd, pattern='^set_parking_btn$'))
     dp.add_handler(CallbackQueryHandler(parking_schema, pattern='^park_schema_jpg_btn$|^park_schema_pdf_btn$'))
-    dp.add_handler(CallbackQueryHandler(set_parking, pattern='^_next_btn$|^_previous_btn$|^set_parking_btn$'))
+    dp.add_handler(CallbackQueryHandler(set_parking, pattern='^_next_btn$|^_previous_btn$|^_parkhouse-'))
     dp.add_handler(CallbackQueryHandler(save_parking, pattern='^_park_place-'))
     dp.add_handler(CallbackQueryHandler(show_parking, pattern='^_parking_owners_btn$'))
 
