@@ -411,9 +411,7 @@ def parking_house_kbd(bot, update):
     text = '<b>Паркінг якого будинку? :</b>'
 
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='_parkhouse-1'),
-                 InlineKeyboardButton('Будинок 2', callback_data='_parkhouse-2')],
-                [InlineKeyboardButton('Будинок 3', callback_data='_parkhouse-3'),
-                 InlineKeyboardButton('Будинок 4', callback_data='_parkhouse-4')]]
+                 InlineKeyboardButton('Будинок 2', callback_data='_parkhouse-2')],]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     bot.editMessageText(text=text, reply_markup=reply_markup, parse_mode=ParseMode.HTML,
