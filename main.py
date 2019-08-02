@@ -327,11 +327,10 @@ def set_section_kbd(bot, update):
                 [InlineKeyboardButton('Секція 3', callback_data='_s3'),
                  InlineKeyboardButton('Секція 4', callback_data='_s4')],
                 [InlineKeyboardButton('Секція 5', callback_data='_s5'),
-                 InlineKeyboardButton('Секція 6', callback_data='_s6')],
-                [InlineKeyboardButton('Завершити редагування', callback_data='_section_reject')]]
+                 InlineKeyboardButton('Секція 6', callback_data='_s6')], ]
     # if selected house 3 or 4 so no 6 section there. delete it from keyboard
     if user.house in [3, 4]:
-        del keyboard[-2][1]
+        del keyboard[-1][1]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.editMessageText('В якій Ви секції ? 🔢 :', reply_markup=reply_markup, parse_mode=ParseMode.HTML,
@@ -516,8 +515,8 @@ def show_parking(bot, update):
                 [InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    parkings = Parking.select(Parking.house).distinct().order_by(Parking.house)
-    query = Parking.select().order_by(Parking.parking)
+    parkings = Parking.select(Parking.house).where(Parking.parking).distinct().order_by(Parking.house)
+    query = Parking.select().where(Parking.parking).order_by(Parking.parking)
 
     neighbors = []
     for i in parkings:
@@ -957,7 +956,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(check_owns, pattern='^edit$|^house_neighbors$|section_neighbors'))
     dp.add_handler(CallbackQueryHandler(owns_selected, pattern='^set_owns'))
     dp.add_handler(CallbackQueryHandler(set_section_kbd, pattern='^_h'))
-    dp.add_handler(CallbackQueryHandler(save_user_data, pattern='^_apart_reject$|^_section_reject$'))
+    dp.add_handler(CallbackQueryHandler(save_user_data, pattern='^_apart_reject$'))
     # parking
     dp.add_handler(CallbackQueryHandler(parking_kbd, pattern='^parking$'))
     dp.add_handler(CallbackQueryHandler(parking_house_kbd, pattern='^set_parking_btn$'))
