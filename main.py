@@ -509,8 +509,8 @@ def show_parking(bot, update):
     log.info(log_msg(update))
     update.callback_query.answer()
 
-    keyboard = [[InlineKeyboardButton('Назад', callback_data='parking')],
-                [InlineKeyboardButton('Меню', callback_data='_menu')]]
+    keyboard = [[InlineKeyboardButton('Назад', callback_data='parking'),
+                InlineKeyboardButton('Меню', callback_data='_menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     parkings = Parking.select(Parking.house).where(Parking.parking).distinct().order_by(Parking.house)
