@@ -76,7 +76,7 @@ building_msg = '''
 🔸 <a href="https://g.page/zhk_charivne_misto_ukrbud?share">google.com</a>
 
 <b>Коли світить сонце в моє вікно?</b> 
-<a href="http://suncalc.net/#/50.411,30.6948,15/2019.07.03/18:38">🌇 suncalc</a>
+<a href="https://www.suncalc.org/#/50.411,30.6956,16/2019.08.03/15:56/1/2">🌇suncalc</a>
 
 <b>Вид з вікна</b>
 <a href="https://ub.com.ua/Media/3dtour/index.php?np=s90">Панорама 🔭</a>
