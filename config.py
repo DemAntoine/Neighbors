@@ -1,16 +1,7 @@
 import logging
-import time
-import sys
 from datetime import datetime
 from pytz import timezone, utc
 import os
-
-#
-# LOGGER_CONFIG = {
-#     'level': logging.INFO,
-#     'file': 'logfile.log',
-#     'formatter': logging.Formatter('{asctime} {message} {funcName}', datefmt='%y.%m.%d %H:%M:%S', style='{')
-# }
 
 
 def customTime(*args):
@@ -24,7 +15,7 @@ def log_msg(update):
     return f'id: {update.effective_user.id} name: {update.effective_user.full_name} usrnm: {update.effective_user.username}'
 
 
-log = logging.getLogger('MainLogger')
+log = logging.getLogger()
 # set custom timezone for logging
 logging.Formatter.converter = customTime
 fh = logging.FileHandler('logfile.log', encoding='utf-8')

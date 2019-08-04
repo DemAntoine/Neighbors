@@ -915,10 +915,10 @@ def del_command(bot, update):
 def building(bot, update):
     """CallbackQueryHandler. pattern ^building$"""
     log.info(log_msg(update))
+    update.callback_query.answer()
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('Меню', callback_data='_menu')]])
     bot.sendMessage(chat_id=update.effective_user.id, text=building_msg,
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
-    update.callback_query.answer()
 
 
 def main():
