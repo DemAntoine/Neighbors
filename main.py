@@ -708,9 +708,8 @@ def del_msg(bot, update):
     log.info(log_msg(update) + f' {pattern}')
 
 
-@run_async
 def greeting(bot, update):
-    """handle new chat members, and sent greeting message. Delete after delay. Running async"""
+    """handle new chat members, and sent greeting message. Can be deleted after delay (for this running async, else - not)"""
     log.info(log_msg(update))
     new_member_name = update.message.new_chat_members[0].full_name
     text = greeting_msg.format(new_member_name)
