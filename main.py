@@ -592,20 +592,20 @@ def save_user_data(bot, update):
 
     user = chosen_owns(update)
     user_mode = Show.get(user_id=update.effective_user.id)
-
+    text = f'В базе {"ОБНОВЛЕН" if user.updated else "СОЗДАН"} пользователь:\n'
+    
     if user_mode.msg_apart_mode and update.message:
         apartment = int(update.message.text)
         user.apartment = apartment
     else:
         if update.callback_query.data == '_apart_reject':
             user.apartment = None
-
+    
     user.updated = datetime.now().strftime('%y.%m.%d %H:%M:%S.%f')[:-4]
     user.save()
     user_mode.msg_apart_mode = False
     user_mode.save()
-
-    text = f'В базе {"ОБНОВЛЕН" if user.updated else "СОЗДАН"} пользователь:\n'
+    
     user_created_report(bot, update, created_user=user, text=text)
     new_neighbor_report(bot, update, created_user=user)
 
