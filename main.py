@@ -298,13 +298,7 @@ def set_houses_kbd(bot, update, text=''):
     """show keyboard to chose its own house"""
     log.info(log_msg(update))
     update.callback_query.answer()
-    # to do: Seems like can remove redundant if/else.
-    if not Own.get_or_none(Own.user == update.effective_user.id, Own.house):
-        text = text
-    elif len(Own.select().where(Own.user == update.effective_user.id)) > 1:
-        text = text
-    else:
-        text = text
+
     keyboard = [[InlineKeyboardButton('Будинок 1', callback_data='_h1'),
                  InlineKeyboardButton('Будинок 2', callback_data='_h2')],
                 [InlineKeyboardButton('Будинок 3', callback_data='_h3'),
