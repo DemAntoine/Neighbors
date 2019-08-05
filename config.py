@@ -15,19 +15,19 @@ def log_msg(update):
     return f'id: {update.effective_user.id} name: {update.effective_user.full_name} usrnm: {update.effective_user.username}'
 
 
-log = logging.getLogger()
-# set custom timezone for logging
 logging.Formatter.converter = customTime
+
+
+log = logging.getLogger()
 fh = logging.FileHandler('logfile.log', encoding='utf-8')
 fh.setLevel(logging.INFO)
 fh.setFormatter(logging.Formatter('{asctime} {message} {funcName}', datefmt='%y.%m.%d %H:%M:%S', style='{'))
 log.addHandler(fh)
 log.setLevel(logging.INFO)
 
-log_chat = logging.getLogger('ChatLogger')
-logging.Formatter.converter = customTime
-fh = logging.FileHandler(os.path.join('logfiles', 'log_chat.log'), encoding='utf-8')
-fh.setLevel(logging.INFO)
-fh.setFormatter(logging.Formatter('{asctime} {message}', datefmt='%y.%m.%d %H:%M:%S', style='{'))
-log_chat.addHandler(fh)
+log_chat = logging.getLogger()
+fh2 = logging.FileHandler(os.path.join('logfiles', 'log_chat.log'), encoding='utf-8')
+fh2.setLevel(logging.INFO)
+fh2.setFormatter(logging.Formatter('{asctime} {message}', datefmt='%y.%m.%d %H:%M:%S', style='{'))
+log_chat.addHandler(fh2)
 log_chat.setLevel(logging.INFO)
