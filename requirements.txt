@@ -1,5 +1,2 @@
-peewee
 python-telegram-bot
-openpyxl
 pytz
-matplotlib

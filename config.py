@@ -17,16 +17,16 @@ def log_msg(update):
 
 logging.Formatter.converter = customTime
 
-log = logging.getLogger()
+log = logging.getLogger('logger_1')
 fh = logging.FileHandler('logfile.log', encoding='utf-8')
-fh.setLevel(logging.DEBUG)
+fh.setLevel(logging.INFO)
 fh.setFormatter(logging.Formatter('{asctime} {message} {funcName}', datefmt='%y.%m.%d %H:%M:%S', style='{'))
 log.addHandler(fh)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 
-log_chat = logging.getLogger()
-fh2 = logging.FileHandler(os.path.join('logfiles', 'log_chat.log'), encoding='utf-8')
-fh2.setLevel(logging.DEBUG)
+log_chat = logging.getLogger('logger_2')
+fh2 = logging.FileHandler(os.path.join('log_chat.log'), encoding='utf-8')
+fh2.setLevel(logging.INFO)
 fh2.setFormatter(logging.Formatter('{asctime} {message}', datefmt='%y.%m.%d %H:%M:%S', style='{'))
 log_chat.addHandler(fh2)
-log_chat.setLevel(logging.DEBUG)
+log_chat.setLevel(logging.INFO)
