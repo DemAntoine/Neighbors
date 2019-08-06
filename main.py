@@ -43,18 +43,11 @@ def menu_kbd(bot, update):
                     parse_mode=ParseMode.HTML)
 
 
-def group_chat_logging(bot, update):
-    """handle text msgs in group chat. MessageHandler((Filters.text & Filters.group)"""
-    msg = update.message.text
-    log_chat.info(log_msg(update) + f' msg: {msg}')
-
-
 def main():
     updater = Updater(KEY)
 
     dp = updater.dispatcher
 
-    dp.add_handler(MessageHandler((Filters.text & Filters.group), group_chat_logging))
     dp.add_handler(CommandHandler("start", menu_kbd))
     dp.add_handler(CallbackQueryHandler(func_1, pattern='^func_1$'))
     dp.add_handler(CallbackQueryHandler(func_2, pattern='^func_2$'))
