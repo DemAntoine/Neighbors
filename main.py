@@ -32,8 +32,6 @@ def func_2(bot, update):
 
 
 def menu_kbd(bot, update):
-
-    log.info(log_msg(update))
     text = '<b>Меню:</b>'
     keyboard = [[InlineKeyboardButton('func_1', callback_data='func_1')],
                 [InlineKeyboardButton('func_2', callback_data='func_2')], ]
