@@ -24,9 +24,9 @@ fh.setFormatter(logging.Formatter('{asctime} {message} {funcName}', datefmt='%y.
 log.addHandler(fh)
 log.setLevel(logging.DEBUG)
 
-log_chat = logging.getLogger()
+log_chat = logging.getLogger('chat')
 fh2 = logging.FileHandler(os.path.join('logfiles', 'log_chat.log'), encoding='utf-8')
-fh2.setLevel(logging.DEBUG)
+fh2.setLevel(logging.INFO)
 fh2.setFormatter(logging.Formatter('{asctime} {message}', datefmt='%y.%m.%d %H:%M:%S', style='{'))
 log_chat.addHandler(fh2)
-log_chat.setLevel(logging.DEBUG)
+log_chat.setLevel(logging.INFO)
