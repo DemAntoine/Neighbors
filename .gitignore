@@ -10,3 +10,5 @@ venv/
 img/error.jpg
 img/mayby.jpg
 logs/
+supervisord.conf
+scratch.py
