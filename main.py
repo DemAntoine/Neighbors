@@ -915,6 +915,17 @@ def building(bot, update):
                     parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
 
 
+@run_async
+def cut_logfile():
+    time.sleep(3600)
+    src = os.path.join('logfile.log')
+    if os.stat(src).st_size > 10 ** 6:
+        dst = os.path.join(datetime.now().strftime('%y.%m.%d ') + 'logfile.log')
+        shutil.copyfile(src, dst)
+        with open(src, 'w'):
+            pass
+
+
 def main():
     updater = Updater(KEY)
 
@@ -961,6 +972,8 @@ def main():
     dp.add_handler(CallbackQueryHandler(set_apartment_kbd, pattern='^_f'))
 
     dp.add_error_handler(catch_err)
+
+    cut_logfile()
 
     updater.start_polling()
     updater.idle()
