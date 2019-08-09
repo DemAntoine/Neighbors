@@ -917,13 +917,14 @@ def building(bot, update):
 
 @run_async
 def cut_logfile():
-    time.sleep(3600)
-    src = os.path.join('logfile.log')
-    if os.stat(src).st_size > 10 ** 6:
-        dst = os.path.join(datetime.now().strftime('%y.%m.%d ') + 'logfile.log')
-        shutil.copyfile(src, dst)
-        with open(src, 'w'):
-            pass
+    while True:
+        time.sleep(3600)
+        src = os.path.join('logfile.log')
+        if os.stat(src).st_size > (10 ** 6):
+            dst = os.path.join(datetime.now().strftime('%y.%m.%d %H:%M:%S ') + 'logfile.log')
+            shutil.copyfile(src, dst)
+            with open(src, 'w'):
+                pass
 
 
 def main():
