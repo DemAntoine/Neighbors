@@ -1,4 +1,4 @@
-from peewee import SqliteDatabase, IntegerField, Model, DateTimeField, CharField, ForeignKeyField, BooleanField
+from peewee import SqliteDatabase, IntegerField, Model, DateTimeField, CharField, ForeignKeyField, BooleanField, TextField
 from datetime import datetime
 
 db = SqliteDatabase('users.db', pragmas={'foreign_keys': 1})
@@ -114,6 +114,17 @@ class Parking(Model):
         return f'{self.user_id} - {self.parking}'
 
 
+class Chat(Model):
+    class Meta:
+        database = db
+        db_table = "chat"
+        
+    user_id = IntegerField()
+    full_name = CharField()
+    msg_len = IntegerField()
+    created = DateTimeField(default=time_format)
+    msg = TextField()
+
 if __name__ == '__main__':
     # db.drop_tables([Parking, Own], safe=True)
-    db.create_tables([Show, Jubilee, Parking, UserName, Own], safe=True)
+    db.create_tables([UserName, Own, Show, Jubilee, Parking, Chat], safe=True)

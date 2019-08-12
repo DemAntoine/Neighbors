@@ -3,7 +3,7 @@ from statistic import Stat
 import os
 import re
 from constants import WarAndPeace
-from models import Own
+from models import Own, Chat
 
 
 class CommonStat(Stat):
@@ -39,27 +39,15 @@ class ChatStat(Stat):
         super().__init__(bot, update)
 
     def answer(self, bot, update):
-        log_files_list = [f for f in os.listdir('logfiles') if not f.startswith('.')]
         data = {}
-        id_pattern = r' ([0-9]{6,10}) '
-        pattern = r' ([0-9]{6,10}) name: (.*) usrnm: '
-
-        for log_file in log_files_list:
-            with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
-                text = file.read()
-                match = list(set(re.findall(pattern, text)))
-                data = {i[0]: [0, 0, i[1]] for i in match}
-
-        for log_file in log_files_list:
-            with open(os.path.join('logfiles', log_file), mode='r', encoding='utf-8') as file:
-                for line in file.readlines():
-                    try:
-                        id_ = re.search(id_pattern, line).group().strip()
-                        data[id_][0] += len(line.split('msg: ')[1].strip())
-                        data[id_][1] += 1
-                    except (KeyError, AttributeError):
-                        pass
-
+        query = Chat.select().order_by(-Chat.id)
+        for msg in query:
+            try:
+                data[msg.user_id][0] += msg.msg_len
+                data[msg.user_id][1] += 1
+            except KeyError:
+                data[msg.user_id] = [msg.msg_len, 1, msg.full_name]
+        
         by_chars = sorted(data.items(), key=lambda x: x[1][0], reverse=True)
         by_msgs = sorted(data.items(), key=lambda x: x[1][1], reverse=True)
         by_chars_avg = sorted(filter(lambda x: x[1][1] > 5, data.items()), key=lambda x: (x[1][0] / x[1][1]))

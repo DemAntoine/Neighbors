@@ -10,7 +10,7 @@ import re
 import shutil
 import matplotlib.pyplot as plt
 from datetime import datetime
-from models import Show, Jubilee, Parking, UserName, Own
+from models import Show, Jubilee, Parking, UserName, Own, Chat
 from constants import help_msg, about_msg, building_msg, houses_arr, greeting_msg
 from classes import filt_integers, filt_call_err, block_filter
 from config import log, log_chat, log_msg
@@ -537,15 +537,14 @@ def msg_handler(bot, update):
 
 def group_chat_logging(bot, update):
     """handle text msgs in group chat. MessageHandler((Filters.text & Filters.group)"""
+    log.info(log_msg(update))
+    
+    user_id = update.effective_user.id
+    full_name = update.effective_user.full_name
+    msg_len = len(update.message.text)
     msg = update.message.text
-    log_chat.info(log_msg(update) + f' msg: {msg}')
-
-    src = os.path.join('logfiles', 'log_chat.log')
-    if os.stat(src).st_size > 10 ** 6:
-        dst = os.path.join('logfiles', datetime.now().strftime('%y.%m.%d ') + 'log_chat.log')
-        shutil.copyfile(src, dst)
-        with open(src, 'w'):
-            pass
+    
+    Chat.create(user_id=user_id, full_name=full_name, msg_len=msg_len, msg=msg)
 
 
 def jubilee(bot, update, created_user):
