@@ -125,6 +125,7 @@ class Chat(Model):
     created = DateTimeField(default=time_format)
     msg = TextField()
 
+
 if __name__ == '__main__':
     # db.drop_tables([Parking, Own], safe=True)
     db.create_tables([UserName, Own, Show, Jubilee, Parking, Chat], safe=True)

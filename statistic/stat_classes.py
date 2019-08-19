@@ -1,7 +1,6 @@
 from telegram import ParseMode, InputMediaPhoto
 from statistic import Stat
 import os
-import re
 from constants import WarAndPeace
 from models import Own, Chat
 
